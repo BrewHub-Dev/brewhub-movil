@@ -50,9 +50,7 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
           </View>
         </View>
 
-        {/* Stats */}
         <View className="flex-row gap-3 mb-6">
-          {/* <View className="flex-1 bg-zinc-900 rounded-2xl p-4 border border-zinc-800"></View> */}
           <View className="flex-1 rounded-2xl p-4 border border-zinc-800">
             <Text className="text-amber-500 text-2xl font-bold">{dashboardCounts.total || 0}</Text>
             <Text className="text-zinc-400 text-xs mt-1">Ordenes Activos</Text>

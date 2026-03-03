@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { RootNavigator } from '../navigation/RootNavigator';
 import { CartProvider } from '../features/orders/providers/CartProvider';
+import { TenantProvider } from '../features/tenant/providers/TenantProvider';
+import { RegisterProvider } from '../features/auth/context/RegisterContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,9 +22,13 @@ export function AppProviders() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <CartProvider>
-            <RootNavigator />
-          </CartProvider>
+          <RegisterProvider>
+            <TenantProvider>
+              <CartProvider>
+                <RootNavigator />
+              </CartProvider>
+            </TenantProvider>
+          </RegisterProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

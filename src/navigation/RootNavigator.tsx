@@ -4,6 +4,8 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
+import { RegisterScreen } from '../features/auth/screens/RegisterScreen';
+import { QRScannerScreen } from '../features/tenant/screens/QRScannerScreen';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { BranchListScreen } from '../features/orders/screens/BranchListScreen';
 import { MenuScreen } from '../features/orders/screens/MenuScreen';
@@ -15,7 +17,6 @@ import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Tema personalizado para modo oscuro
 const CustomDarkTheme = {
   ...DarkTheme,
   colors: {
@@ -28,7 +29,6 @@ const CustomDarkTheme = {
   },
 };
 
-// Tema personalizado para modo claro
 const CustomLightTheme = {
   ...DefaultTheme,
   colors: {
@@ -76,6 +76,8 @@ export function RootNavigator() {
         }}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="QRScanner" component={QRScannerScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen
           name="BranchList"

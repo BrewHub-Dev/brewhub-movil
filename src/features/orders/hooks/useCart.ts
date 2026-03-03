@@ -22,7 +22,6 @@ export function useCart() {
     notes?: string
   ) => {
     setCartItems((prev) => {
-      // Verificar si el item ya existe con los mismos modificadores
       const existingIndex = prev.findIndex(
         (cartItem) =>
           cartItem.item._id === item._id &&
@@ -63,7 +62,6 @@ export function useCart() {
   const calculateItemTotal = (cartItem: CartItem): number => {
     let total = cartItem.item.price;
 
-    // Agregar precio de modificadores
     cartItem.selectedModifiers.forEach((selectedMod) => {
       const modifier = cartItem.item.modifiers?.find((m) => m.name === selectedMod.name);
       const option = modifier?.options.find((o) => o.name === selectedMod.optionName);

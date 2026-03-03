@@ -6,7 +6,6 @@ export function useTheme() {
 
   return {
     isDark,
-    // Para usar con className de forma dinámica
     bg: {
       primary: isDark ? 'bg-zinc-950' : 'bg-white',
       secondary: isDark ? 'bg-zinc-900' : 'bg-gray-50',
@@ -22,7 +21,6 @@ export function useTheme() {
       primary: isDark ? 'border-zinc-800' : 'border-gray-200',
       secondary: isDark ? 'border-zinc-700' : 'border-gray-300',
     },
-    // Colores para usar directamente
     colors: {
       background: isDark ? '#09090b' : '#ffffff',
       backgroundSecondary: isDark ? '#18181b' : '#f9fafb',

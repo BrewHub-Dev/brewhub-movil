@@ -8,6 +8,7 @@ import {
   RefreshControl,
   useColorScheme,
 } from 'react-native';
+import { ShoppingBag } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../../auth/hooks/useSession';
@@ -136,7 +137,7 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
 
         {!orders?.length && (
           <View className="flex-1 justify-center items-center py-20">
-            <Text className={`text-4xl mb-4`}>🛒</Text>
+            <ShoppingBag className={`text-5xl mb-4 ${isDark ? 'text-zinc-500' : 'text-gray-400'}`} />
             <Text className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
               Sin órdenes aún
             </Text>

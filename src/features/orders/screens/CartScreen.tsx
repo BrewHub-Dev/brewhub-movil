@@ -9,19 +9,33 @@ import {
   ScrollView,
   useColorScheme,
 } from 'react-native';
+import {
+  CreditCard,
+  Banknote,
+  Smartphone,
+  ShoppingCart,
+  Trash2,
+  Check,
+  Minus,
+  Plus,
+} from 'lucide-react-native';
 import { useMutation } from '@tanstack/react-query';
 import { useCart } from '../providers/CartProvider';
 import { createOrder } from '../services/orderService';
 import type { CartScreenProps } from '../../../navigation/types';
 import type { PaymentMethod } from '../../../shared/types/orders.types';
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string }[] = [
-  { value: 'card', label: 'Tarjeta', icon: '💳' },
-  { value: 'cash', label: 'Efectivo', icon: '💵' },
-  { value: 'wallet', label: 'Wallet', icon: '📱' },
+const PAYMENT_METHODS: {
+  value: PaymentMethod;
+  label: string;
+  icon: React.ReactElement;
+}[] = [
+  { value: 'card', label: 'Tarjeta', icon: <CreditCard size={20} /> },
+  { value: 'cash', label: 'Efectivo', icon: <Banknote size={20} /> },
+  { value: 'wallet', label: 'Wallet', icon: <Smartphone size={20} /> },
 ];
 
-export function CartScreen({ navigation, route }: CartScreenProps) {
+export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
   const { branchId } = route.params;
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -78,7 +92,11 @@ export function CartScreen({ navigation, route }: CartScreenProps) {
   if (cart.cartItems.length === 0) {
     return (
       <View className={`flex-1 justify-center items-center ${isDark ? 'bg-zinc-950' : 'bg-white'} px-6`}>
-        <Text className="text-6xl mb-4">🛒</Text>
+        <ShoppingCart
+          size={64}
+          color={isDark ? '#a1a1aa' : '#6b7280'}
+          style={{ marginBottom: 16 }}
+        />
         <Text className={`${isDark ? 'text-zinc-400' : 'text-gray-600'} text-center text-lg mb-6`}>
           Tu carrito está vacío
         </Text>
@@ -114,6 +132,7 @@ export function CartScreen({ navigation, route }: CartScreenProps) {
                     <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
                       {cartItem.item.name}
                     </Text>
+
                     {cartItem.selectedModifiers.length > 0 && (
                       <View className="mt-1">
                         {cartItem.selectedModifiers.map((mod, idx) => (
@@ -123,6 +142,7 @@ export function CartScreen({ navigation, route }: CartScreenProps) {
                         ))}
                       </View>
                     )}
+
                     {cartItem.notes && (
                       <Text className={`text-sm ${isDark ? 'text-zinc-500' : 'text-gray-500'} italic mt-1`}>
                         Nota: {cartItem.notes}
@@ -134,30 +154,28 @@ export function CartScreen({ navigation, route }: CartScreenProps) {
                     onPress={() => cart.removeFromCart(index)}
                     className="ml-2"
                   >
-                    <Text className="text-red-500 text-lg">🗑️</Text>
+                    <Trash2 size={20} color="#ef4444" />
                   </TouchableOpacity>
                 </View>
 
                 <View className={`flex-row justify-between items-center mt-3 pt-3 border-t ${isDark ? 'border-zinc-800' : 'border-gray-100'}`}>
                   <View className={`flex-row items-center ${isDark ? 'bg-zinc-800' : 'bg-gray-100'} rounded-lg`}>
                     <TouchableOpacity
-                      onPress={() =>
-                        cart.updateQuantity(index, cartItem.quantity - 1)
-                      }
+                      onPress={() => cart.updateQuantity(index, cartItem.quantity - 1)}
                       className="px-4 py-2"
                     >
-                      <Text className={`text-xl font-bold ${isDark ? 'text-zinc-300' : 'text-gray-700'}`}>-</Text>
+                      <Minus size={18} color={isDark ? '#d4d4d8' : '#374151'} />
                     </TouchableOpacity>
+
                     <Text className={`px-4 font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
                       {cartItem.quantity}
                     </Text>
+
                     <TouchableOpacity
-                      onPress={() =>
-                        cart.updateQuantity(index, cartItem.quantity + 1)
-                      }
+                      onPress={() => cart.updateQuantity(index, cartItem.quantity + 1)}
                       className="px-4 py-2"
                     >
-                      <Text className={`text-xl font-bold ${isDark ? 'text-zinc-300' : 'text-gray-700'}`}>+</Text>
+                      <Plus size={18} color={isDark ? '#d4d4d8' : '#374151'} />
                     </TouchableOpacity>
                   </View>
 
@@ -174,50 +192,63 @@ export function CartScreen({ navigation, route }: CartScreenProps) {
           <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'} mb-3`}>
             Método de pago
           </Text>
-          <View>
-            {PAYMENT_METHODS.map((method) => (
+
+          {PAYMENT_METHODS.map((method) => {
+            const isSelected = paymentMethod === method.value;
+
+            return (
               <TouchableOpacity
                 key={method.value}
                 onPress={() => setPaymentMethod(method.value)}
                 className={`flex-row items-center p-4 rounded-lg border-2 mb-2 ${
-                  paymentMethod === method.value
+                  isSelected
                     ? `border-amber-500 ${isDark ? 'bg-amber-950' : 'bg-amber-50'}`
                     : `${isDark ? 'border-zinc-700 bg-zinc-800' : 'border-gray-200 bg-white'}`
                 }`}
               >
-                <Text className="text-2xl mr-3">{method.icon}</Text>
+                <View className="mr-3">
+                  {React.cloneElement(method.icon as React.ReactElement<any>, {
+                    color: isSelected
+                      ? '#f59e0b'
+                      : isDark
+                      ? '#ffffff'
+                      : '#374151',
+                  })}
+                </View>
+
                 <Text
                   className={`font-medium flex-1 ${
-                    paymentMethod === method.value
+                    isSelected
                       ? `${isDark ? 'text-amber-200' : 'text-amber-800'}`
                       : `${isDark ? 'text-white' : 'text-gray-800'}`
                   }`}
                 >
                   {method.label}
                 </Text>
-                {paymentMethod === method.value && (
-                  <Text className="text-amber-600 text-xl">✓</Text>
-                )}
+
+                {isSelected && <Check size={20} color="#f59e0b" />}
               </TouchableOpacity>
-            ))}
-          </View>
+            );
+          })}
         </View>
 
         <View className={`${isDark ? 'bg-zinc-900' : 'bg-white'} mx-4 mt-4 mb-4 rounded-xl p-4 border ${isDark ? 'border-zinc-800' : 'border-gray-200'}`}>
-          <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'} mb-3`}>Resumen</Text>
-          <View>
-            <View className="flex-row justify-between">
-              <Text className={isDark ? 'text-zinc-400' : 'text-gray-600'}>Subtotal</Text>
-              <Text className={`${isDark ? 'text-white' : 'text-gray-800'} font-medium`}>
-                ${cart.subtotal.toFixed(2)}
-              </Text>
-            </View>
-            <View className={`flex-row justify-between pt-3 border-t ${isDark ? 'border-zinc-800' : 'border-gray-200'} mt-3`}>
-              <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>Total</Text>
-              <Text className={`text-lg font-bold ${isDark ? 'text-amber-500' : 'text-amber-700'}`}>
-                ${cart.subtotal.toFixed(2)}
-              </Text>
-            </View>
+          <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'} mb-3`}>
+            Resumen
+          </Text>
+
+          <View className="flex-row justify-between">
+            <Text className={isDark ? 'text-zinc-400' : 'text-gray-600'}>Subtotal</Text>
+            <Text className={`${isDark ? 'text-white' : 'text-gray-800'} font-medium`}>
+              ${cart.subtotal.toFixed(2)}
+            </Text>
+          </View>
+
+          <View className={`flex-row justify-between pt-3 border-t ${isDark ? 'border-zinc-800' : 'border-gray-200'} mt-3`}>
+            <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>Total</Text>
+            <Text className={`text-lg font-bold ${isDark ? 'text-amber-500' : 'text-amber-700'}`}>
+              ${cart.subtotal.toFixed(2)}
+            </Text>
           </View>
         </View>
       </ScrollView>

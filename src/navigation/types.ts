@@ -2,6 +2,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
   Login: undefined;
+  Register: { inviteCode?: string } | undefined;
+  QRScanner: { fromRegister?: boolean } | undefined;
   Home: undefined;
   BranchList: undefined;
   Menu: { branchId: string; branchName: string };
@@ -11,6 +13,8 @@ export type RootStackParamList = {
 };
 
 export type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
+export type RegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'Register'>;
+export type QRScannerScreenProps = NativeStackScreenProps<RootStackParamList, 'QRScanner'>;
 export type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 export type BranchListScreenProps = NativeStackScreenProps<RootStackParamList, 'BranchList'>;
 export type MenuScreenProps = NativeStackScreenProps<RootStackParamList, 'Menu'>;

@@ -6,7 +6,8 @@ import {
   Platform,
   ScrollView,
   StatusBar,
-  Image
+  Image,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -37,14 +38,13 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
               />
               </View>
               <Text className="text-dark text-4xl font-bold tracking-tight">
-                BrewHub
+                Brewsy
               </Text>
               <Text className="text-zinc-400 text-base mt-2">
                 Crea tus ordenes y monitorea su progreso en tiempo real
               </Text>
             </View>
 
-            {/* Login Card */}
             <View className="w-full rounded-2xl p-6 border border-zinc-300">
               <Text className="text-dark text-xl font-bold mb-1">
                 Bienvenido
@@ -54,6 +54,18 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
               </Text>
 
               <LoginForm navigation={navigation} />
+
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Register')}
+                className="items-center mt-4"
+              >
+                <Text className="text-zinc-600 text-sm">
+                  ¿No tienes cuenta?{' '}
+                  <Text className="text-amber-500 font-medium">
+                    Regístrate
+                  </Text>
+                </Text>
+              </TouchableOpacity>
 
               <Text className="text-zinc-600 text-xs text-center mt-5">
                 version 1.0.0

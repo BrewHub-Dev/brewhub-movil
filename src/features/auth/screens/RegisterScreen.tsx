@@ -71,6 +71,12 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
     }
   };
 
+  const inputBg = isDark ? '#1c1917' : '#fff';
+  const inputBorder = isDark ? COFFEE.accent : COFFEE.tan;
+  const inputText = isDark ? '#fafaf9' : COFFEE.darkRoast;
+  const labelColor = isDark ? '#d4d4d8' : COFFEE.darkRoast;
+  const subtextColor = isDark ? '#a1a1aa' : COFFEE.mocha;
+
   return (
     <SafeAreaView
       className="flex-1"
@@ -93,7 +99,8 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
         >
           <View className="flex-1 items-center justify-center px-6 py-12">
             <View className="items-center mb-10">
-              <View className="w-24 h-24 rounded-3xl bg-amber-500 items-center justify-center mb-5 shadow-2xl">
+              <View className="w-24 h-24 rounded-3xl items-center justify-center mb-5 shadow-2xl"
+                style={{ backgroundColor: COFFEE.accent }}>
                 <Image
                   source={require('@assets/Subject.png')}
                   style={{ width: 48, height: 48 }}
@@ -107,7 +114,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
               </Text>
               <Text
                 className="text-base mt-2"
-                style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+                style={{ color: subtextColor }}
               >
                 Crea tu cuenta y comienza a ordenar
               </Text>
@@ -116,8 +123,8 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
             <View
               className="w-full rounded-2xl p-6 border"
               style={{
-                backgroundColor: isDark ? COFFEE.darkRoast : '#fff',
-                borderColor: COFFEE.accent,
+                backgroundColor: isDark ? '#18181b' : '#fff',
+                borderColor: isDark ? COFFEE.accent : COFFEE.tan,
               }}
             >
               <Text
@@ -128,23 +135,20 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
               </Text>
               <Text
                 className="text-sm mb-6"
-                style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+                style={{ color: subtextColor }}
               >
                 Completa tus datos para crear una cuenta
               </Text>
 
               <View className="mb-4">
-                <Text
-                  className="text-sm font-medium mb-2"
-                  style={{ color: isDark ? COFFEE.latte : COFFEE.darkRoast }}
-                >
+                <Text className="text-sm font-medium mb-2" style={{ color: labelColor }}>
                   Nombre completo
                 </Text>
                 <TextInput
-                  className={`border rounded-xl px-4 py-3 ${isDark ? 'text-white bg-zinc-900' : 'text-gray-900 bg-white'}`}
-                  style={{ borderColor: COFFEE.accent }}
+                  className="rounded-xl px-4 py-3"
+                  style={{ backgroundColor: inputBg, borderWidth: 1, borderColor: inputBorder, color: inputText }}
                   placeholder="Juan Pérez"
-                  placeholderTextColor={isDark ? '#71717a' : '#a1a1aa'}
+                  placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -152,17 +156,14 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
               </View>
 
               <View className="mb-4">
-                <Text
-                  className="text-sm font-medium mb-2"
-                  style={{ color: isDark ? COFFEE.latte : COFFEE.darkRoast }}
-                >
+                <Text className="text-sm font-medium mb-2" style={{ color: labelColor }}>
                   Correo electrónico
                 </Text>
                 <TextInput
-                  className={`border rounded-xl px-4 py-3 ${isDark ? 'text-white bg-zinc-900' : 'text-gray-900 bg-white'}`}
-                  style={{ borderColor: COFFEE.accent }}
+                  className="rounded-xl px-4 py-3"
+                  style={{ backgroundColor: inputBg, borderWidth: 1, borderColor: inputBorder, color: inputText }}
                   placeholder="tu@email.com"
-                  placeholderTextColor={isDark ? '#71717a' : '#a1a1aa'}
+                  placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
                   value={emailAddress}
                   onChangeText={setEmailAddress}
                   keyboardType="email-address"
@@ -171,17 +172,14 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
               </View>
 
               <View className="mb-4">
-                <Text
-                  className="text-sm font-medium mb-2"
-                  style={{ color: isDark ? COFFEE.latte : COFFEE.darkRoast }}
-                >
+                <Text className="text-sm font-medium mb-2" style={{ color: labelColor }}>
                   Contraseña
                 </Text>
                 <TextInput
-                  className={`border rounded-xl px-4 py-3 ${isDark ? 'text-white bg-zinc-900' : 'text-gray-900 bg-white'}`}
-                  style={{ borderColor: COFFEE.accent }}
+                  className="rounded-xl px-4 py-3"
+                  style={{ backgroundColor: inputBg, borderWidth: 1, borderColor: inputBorder, color: inputText }}
                   placeholder="••••••••"
-                  placeholderTextColor={isDark ? '#71717a' : '#a1a1aa'}
+                  placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
@@ -190,10 +188,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
 
               <View className="mb-6">
                 <View className="flex-row justify-between items-center mb-2">
-                  <Text
-                    className="text-sm font-medium"
-                    style={{ color: isDark ? COFFEE.latte : COFFEE.darkRoast }}
-                  >
+                  <Text className="text-sm font-medium" style={{ color: labelColor }}>
                     Código de invitación
                   </Text>
                   <TouchableOpacity
@@ -207,10 +202,10 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
                   </TouchableOpacity>
                 </View>
                 <TextInput
-                  className={`border rounded-xl px-4 py-3 ${isDark ? 'text-white bg-zinc-900' : 'text-gray-900 bg-white'}`}
-                  style={{ borderColor: COFFEE.accent }}
+                  className="rounded-xl px-4 py-3"
+                  style={{ backgroundColor: inputBg, borderWidth: 1, borderColor: inputBorder, color: inputText }}
                   placeholder="CAFE-ABC-2024"
-                  placeholderTextColor={isDark ? '#71717a' : '#a1a1aa'}
+                  placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
                   value={inviteCode}
                   onChangeText={setInviteCode}
                   autoCapitalize="characters"
@@ -218,7 +213,8 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
               </View>
 
               <TouchableOpacity
-                className="bg-amber-500 rounded-xl py-4 items-center mb-4"
+                className="rounded-xl py-4 items-center mb-4"
+                style={{ backgroundColor: COFFEE.accent }}
                 onPress={handleRegister}
                 disabled={isLoading}
               >
@@ -235,10 +231,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
                 onPress={() => navigation.navigate('Login')}
                 className="items-center"
               >
-                <Text
-                  className="text-sm"
-                  style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
-                >
+                <Text className="text-sm" style={{ color: subtextColor }}>
                   ¿Ya tienes cuenta?{' '}
                   <Text className="font-medium" style={{ color: COFFEE.accent }}>
                     Inicia sesión

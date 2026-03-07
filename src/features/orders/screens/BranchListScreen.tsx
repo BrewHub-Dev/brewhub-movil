@@ -11,6 +11,7 @@ import { MapPin, Phone, ChevronRight } from 'lucide-react-native';
 import { COFFEE } from '../constants/coffee';
 import { useQuery } from '@tanstack/react-query';
 import { getBranches } from '../services/branchService';
+import { useTenant } from '@/features/tenant/providers/TenantProvider';
 import type { Branch } from '@/shared/types/branches.types';
 import type { BranchListScreenProps } from '@/navigation/types';
 
@@ -26,7 +27,11 @@ function BranchCard({
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85}
       className="rounded-3xl overflow-hidden"
-      style={{ backgroundColor: isDark ? COFFEE.darkRoast : '#fff' }}
+      style={{
+        backgroundColor: isDark ? '#18181b' : '#fff',
+        borderWidth: isDark ? 1 : 0,
+        borderColor: COFFEE.accent,
+      }}
     >
       <View className="h-1.5" style={{ backgroundColor: COFFEE.accent }} />
       <View className="p-5">
@@ -45,20 +50,20 @@ function BranchCard({
           </View>
         </View>
         <View className="flex-row items-center mb-2">
-          <MapPin size={14} color={isDark ? COFFEE.latte : COFFEE.mocha} />
+          <MapPin size={14} color={isDark ? '#a1a1aa' : COFFEE.mocha} />
           <Text
             className="text-sm ml-2 flex-1"
             numberOfLines={1}
-            style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+            style={{ color: isDark ? '#a1a1aa' : COFFEE.mocha }}
           >
             {item.address.street}, {item.address.city}
           </Text>
         </View>
         <View className="flex-row items-center">
-          <Phone size={14} color={isDark ? COFFEE.latte : COFFEE.mocha} />
+          <Phone size={14} color={isDark ? '#a1a1aa' : COFFEE.mocha} />
           <Text
             className="text-sm ml-2"
-            style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+            style={{ color: isDark ? '#a1a1aa' : COFFEE.mocha }}
           >
             {item.phone}
           </Text>
@@ -71,9 +76,10 @@ function BranchCard({
 export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { tenant } = useTenant();
 
   const { data: branches, isLoading, error } = useQuery({
-    queryKey: ['branches'],
+    queryKey: ['branches', tenant?.tenantId],
     queryFn: getBranches,
   });
 
@@ -87,10 +93,10 @@ export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>
         className="flex-1 justify-center items-center"
         style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}
       >
-        <ActivityIndicator size="large" color={COFFEE.mocha} />
+        <ActivityIndicator size="large" color={COFFEE.accent} />
         <Text
           className="mt-4 text-sm"
-          style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+          style={{ color: isDark ? '#a1a1aa' : COFFEE.mocha }}
         >
           Cargando tiendas...
         </Text>
@@ -112,7 +118,7 @@ export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>
         </Text>
         <Text
           className="text-center mt-2 text-sm"
-          style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+          style={{ color: isDark ? '#a1a1aa' : COFFEE.mocha }}
         >
           {error instanceof Error ? error.message : 'Ocurrió un error'}
         </Text>
@@ -128,7 +134,7 @@ export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>
       >
         <Text
           className="text-center text-lg"
-          style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+          style={{ color: isDark ? '#a1a1aa' : COFFEE.mocha }}
         >
           No hay tiendas disponibles
         </Text>

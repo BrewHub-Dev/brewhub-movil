@@ -13,6 +13,7 @@ import { CartScreen } from '../features/orders/screens/CartScreen';
 import { MyOrdersScreen } from '../features/orders/screens/MyOrdersScreen';
 import { OrderDetailsScreen } from '../features/orders/screens/OrderDetailsScreen';
 import { useSession } from '../features/auth/hooks/useSession';
+import { useTenant } from '../features/tenant/providers/TenantProvider';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -60,10 +61,19 @@ const CustomLightTheme = {
 
 export function RootNavigator() {
   const { isAuthenticated, isLoading } = useSession();
+  const { tenant, isLoading: isTenantLoading } = useTenant();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  if (isLoading) {
+  const hasTenant = !!tenant?.tenantId;
+
+  const getInitialRoute = (): keyof RootStackParamList => {
+    if (!isAuthenticated) return 'Login';
+    if (!hasTenant) return 'QRScanner';
+    return 'Home';
+  };
+
+  if (isLoading || isTenantLoading) {
     return (
       <View style={{
         flex: 1,
@@ -83,7 +93,7 @@ export function RootNavigator() {
       documentTitle={{ formatter: () => 'BrewHub' }}
     >
       <Stack.Navigator
-        initialRouteName={isAuthenticated ? 'Home' : 'Login'}
+        initialRouteName={getInitialRoute()}
         screenOptions={{
           headerShown: false,
           animation: 'fade',

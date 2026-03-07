@@ -128,8 +128,9 @@ export function ProductCard({ item, cardWidth, onPress }: Readonly<ProductCardPr
             <Text
               style={{
                 color: '#fff',
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: '800',
+                marginLeft: 5,
               }}
             >
               ${item.price.toFixed(2)}
@@ -140,7 +141,7 @@ export function ProductCard({ item, cardWidth, onPress }: Readonly<ProductCardPr
                 flexDirection: 'row',
                 alignItems: 'center',
                 backgroundColor: COFFEE.caramel,
-                paddingHorizontal: 18,
+                paddingHorizontal: 10,
                 paddingVertical: 10,
                 borderRadius: 18,
               }}

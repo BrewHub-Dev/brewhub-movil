@@ -43,7 +43,8 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
           <View className="flex-1 items-center justify-center px-6 py-12">
 
             <View className="items-center mb-10">
-              <View className="w-24 h-24 rounded-3xl bg-amber-500 items-center justify-center mb-5 shadow-2xl">
+              <View className="w-24 h-24 rounded-3xl items-center justify-center mb-5 shadow-2xl"
+                style={{ backgroundColor: COFFEE.accent }}>
               <Image
                 source={require('@assets/Subject.png')}
                 style={{ width: 48, height: 48 }}
@@ -57,7 +58,7 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
               </Text>
               <Text
                 className="text-base mt-2"
-                style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+                style={{ color: isDark ? '#a1a1aa' : COFFEE.mocha }}
               >
                 Crea tus ordenes y monitorea su progreso en tiempo real
               </Text>
@@ -66,8 +67,8 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
             <View
               className="w-full rounded-2xl p-6 border"
               style={{
-                backgroundColor: isDark ? COFFEE.darkRoast : '#fff',
-                borderColor: COFFEE.accent,
+                backgroundColor: isDark ? '#18181b' : '#fff',
+                borderColor: isDark ? COFFEE.accent : COFFEE.tan,
               }}
             >
               <Text
@@ -78,7 +79,7 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
               </Text>
               <Text
                 className="text-sm mb-6"
-                style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+                style={{ color: isDark ? '#a1a1aa' : COFFEE.mocha }}
               >
                 Ingresa tus credenciales para continuar
               </Text>
@@ -91,7 +92,7 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
               >
                 <Text
                   className="text-sm"
-                  style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+                  style={{ color: isDark ? '#a1a1aa' : COFFEE.mocha }}
                 >
                   ¿No tienes cuenta?{' '}
                   <Text className="font-medium" style={{ color: COFFEE.accent }}>
@@ -102,7 +103,7 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
 
               <Text
                 className="text-xs text-center mt-5"
-                style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+                style={{ color: isDark ? '#52525b' : COFFEE.caramel }}
               >
                 version 1.0.0
               </Text>

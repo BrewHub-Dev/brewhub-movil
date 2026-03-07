@@ -95,11 +95,11 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
       >
         <View
           className="p-6 rounded-full mb-6"
-          style={{ backgroundColor: isDark ? COFFEE.darkRoast : '#fff' }}
+          style={{ backgroundColor: isDark ? '#18181b' : '#fff' }}
         >
           <ShoppingCart
             size={80}
-            color={isDark ? COFFEE.latte : '#9ca3af'}
+            color={isDark ? '#a1a1aa' : '#9ca3af'}
           />
         </View>
         <Text
@@ -110,7 +110,7 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
         </Text>
         <Text
           className="text-center text-base mb-8"
-          style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+          style={{ color: isDark ? '#a1a1aa' : COFFEE.mocha }}
         >
           Parece que aún no has agregado nada. ¡Descubre nuestro menú!
         </Text>
@@ -147,7 +147,7 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
         Tu carrito
       </Text>
       <Text
-        style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+        style={{ color: isDark ? '#a1a1aa' : COFFEE.mocha }}
         className="text-base mt-1"
       >
         Tienes {cart.itemCount} {cart.itemCount === 1 ? 'producto' : 'productos'}
@@ -159,7 +159,8 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
     <View className="px-4 pb-8 mt-2">
       <View
         style={{
-          backgroundColor: isDark ? COFFEE.darkRoast + 'cc' : '#fff',
+          backgroundColor: isDark ? '#18181b' : '#fff',
+          borderColor: isDark ? COFFEE.accent : '#e5e7eb',
         }}
         className="rounded-3xl p-5 mb-4 border"
       >
@@ -201,7 +202,8 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
 
       <View
         style={{
-          backgroundColor: isDark ? COFFEE.darkRoast + 'cc' : '#fff',
+          backgroundColor: isDark ? '#18181b' : '#fff',
+          borderColor: isDark ? COFFEE.accent : '#e5e7eb',
         }}
         className="rounded-3xl p-5 border"
       >
@@ -240,8 +242,8 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
           <View
           className="mx-4 mb-4 rounded-3xl p-5 border"
           style={{
-            backgroundColor: isDark ? COFFEE.darkRoast : '#fff',
-            borderColor: isDark ? '#27272a' : '#e5e7eb',
+            backgroundColor: isDark ? '#18181b' : '#fff',
+            borderColor: isDark ? COFFEE.accent : '#e5e7eb',
           }}
         >
             
@@ -326,7 +328,7 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
             shadowOpacity: 0.1,
             shadowRadius: 10,
             backgroundColor: createOrderMutation.isPending
-              ? (isDark ? COFFEE.darkRoast : COFFEE.latte)
+              ? (isDark ? '#27272a' : COFFEE.latte)
               : COFFEE.mocha,
           }}
         >

@@ -71,7 +71,7 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
     queryKey: ['my-orders', user?._id],
     queryFn: () => getMyOrders(user!._id),
     enabled: !!user?._id,
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
   });
 
   const pending = orders?.filter((o) => !['completed', 'cancelled'].includes(o.status)) ?? [];

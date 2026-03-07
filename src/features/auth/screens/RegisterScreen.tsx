@@ -10,13 +10,15 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { QrCode } from 'lucide-react-native';
 import type { RegisterScreenProps } from '../../../navigation/types';
 import { registerWithInviteCode } from '../services/authService';
 import { useRegisterForm } from '../context/RegisterContext';
+import { showAlert } from '@/shared/services/alert';
+import { COFFEE } from '../../orders/constants/coffee';
 
 export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenProps>) {
   const { formData, setFormData, clearFormData } = useRegisterForm();
@@ -27,13 +29,13 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
     route.params?.inviteCode || formData.inviteCode || ''
   );
   const [isLoading, setIsLoading] = useState(false);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
-  // Sincronizar cambios de formulario con el contexto
   useEffect(() => {
     setFormData({ name, emailAddress, password, inviteCode });
   }, [name, emailAddress, password, inviteCode]);
 
-  // Actualizar inviteCode cuando viene desde QR scanner
   useEffect(() => {
     if (route.params?.inviteCode) {
       setInviteCode(route.params.inviteCode);
@@ -42,7 +44,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
 
   const handleRegister = async () => {
     if (!name.trim() || !emailAddress.trim() || !password.trim() || !inviteCode.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      showAlert('Error', 'Por favor completa todos los campos');
       return;
     }
 
@@ -57,21 +59,28 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
 
       clearFormData();
 
-      Alert.alert(
+      showAlert(
         'Registro Exitoso',
         'Tu cuenta ha sido creada. Ahora puedes iniciar sesión.',
         [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
       );
     } catch (error: unknown) {
-      Alert.alert('Error', (error as any)?.message || 'No se pudo completar el registro');
+      showAlert('Error', (error as any)?.message || 'No se pudo completar el registro');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor="#09090b" />
+    <SafeAreaView
+      className="flex-1"
+      style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}
+      edges={['top', 'bottom']}
+    >
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={isDark ? '#09090b' : COFFEE.cream}
+      />
 
       <KeyboardAvoidingView
         className="flex-1"
@@ -90,30 +99,52 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
                   style={{ width: 48, height: 48 }}
                 />
               </View>
-              <Text className="text-dark text-4xl font-bold tracking-tight">
+              <Text
+                className="text-4xl font-bold tracking-tight"
+                style={{ color: isDark ? '#fafaf9' : COFFEE.darkRoast }}
+              >
                 Brewsy
               </Text>
-              <Text className="text-zinc-400 text-base mt-2">
+              <Text
+                className="text-base mt-2"
+                style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+              >
                 Crea tu cuenta y comienza a ordenar
               </Text>
             </View>
 
-            <View className="w-full rounded-2xl p-6 border border-zinc-300">
-              <Text className="text-dark text-xl font-bold mb-1">
+            <View
+              className="w-full rounded-2xl p-6 border"
+              style={{
+                backgroundColor: isDark ? COFFEE.darkRoast : '#fff',
+                borderColor: COFFEE.accent,
+              }}
+            >
+              <Text
+                className="text-xl font-bold mb-1"
+                style={{ color: isDark ? '#fafaf9' : COFFEE.darkRoast }}
+              >
                 Registro
               </Text>
-              <Text className="text-zinc-500 text-sm mb-6">
+              <Text
+                className="text-sm mb-6"
+                style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+              >
                 Completa tus datos para crear una cuenta
               </Text>
 
               <View className="mb-4">
-                <Text className="text-zinc-700 text-sm font-medium mb-2">
+                <Text
+                  className="text-sm font-medium mb-2"
+                  style={{ color: isDark ? COFFEE.latte : COFFEE.darkRoast }}
+                >
                   Nombre completo
                 </Text>
                 <TextInput
-                  className="border border-zinc-300 rounded-xl px-4 py-3 text-dark"
+                  className={`border rounded-xl px-4 py-3 ${isDark ? 'text-white bg-zinc-900' : 'text-gray-900 bg-white'}`}
+                  style={{ borderColor: COFFEE.accent }}
                   placeholder="Juan Pérez"
-                  placeholderTextColor="#a1a1aa"
+                  placeholderTextColor={isDark ? '#71717a' : '#a1a1aa'}
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -121,13 +152,17 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
               </View>
 
               <View className="mb-4">
-                <Text className="text-zinc-700 text-sm font-medium mb-2">
+                <Text
+                  className="text-sm font-medium mb-2"
+                  style={{ color: isDark ? COFFEE.latte : COFFEE.darkRoast }}
+                >
                   Correo electrónico
                 </Text>
                 <TextInput
-                  className="border border-zinc-300 rounded-xl px-4 py-3 text-dark"
+                  className={`border rounded-xl px-4 py-3 ${isDark ? 'text-white bg-zinc-900' : 'text-gray-900 bg-white'}`}
+                  style={{ borderColor: COFFEE.accent }}
                   placeholder="tu@email.com"
-                  placeholderTextColor="#a1a1aa"
+                  placeholderTextColor={isDark ? '#71717a' : '#a1a1aa'}
                   value={emailAddress}
                   onChangeText={setEmailAddress}
                   keyboardType="email-address"
@@ -136,13 +171,17 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
               </View>
 
               <View className="mb-4">
-                <Text className="text-zinc-700 text-sm font-medium mb-2">
+                <Text
+                  className="text-sm font-medium mb-2"
+                  style={{ color: isDark ? COFFEE.latte : COFFEE.darkRoast }}
+                >
                   Contraseña
                 </Text>
                 <TextInput
-                  className="border border-zinc-300 rounded-xl px-4 py-3 text-dark"
+                  className={`border rounded-xl px-4 py-3 ${isDark ? 'text-white bg-zinc-900' : 'text-gray-900 bg-white'}`}
+                  style={{ borderColor: COFFEE.accent }}
                   placeholder="••••••••"
-                  placeholderTextColor="#a1a1aa"
+                  placeholderTextColor={isDark ? '#71717a' : '#a1a1aa'}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
@@ -151,23 +190,27 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
 
               <View className="mb-6">
                 <View className="flex-row justify-between items-center mb-2">
-                  <Text className="text-zinc-700 text-sm font-medium">
+                  <Text
+                    className="text-sm font-medium"
+                    style={{ color: isDark ? COFFEE.latte : COFFEE.darkRoast }}
+                  >
                     Código de invitación
                   </Text>
                   <TouchableOpacity
                     onPress={() => navigation.navigate('QRScanner', { fromRegister: true })}
                     className="flex-row items-center"
                   >
-                    <QrCode size={16} color="#f59e0b" />
-                    <Text className="text-amber-500 text-sm font-medium ml-1">
+                    <QrCode size={16} color={COFFEE.accent} />
+                    <Text className="text-sm font-medium ml-1" style={{ color: COFFEE.accent }}>
                       Escanear QR
                     </Text>
                   </TouchableOpacity>
                 </View>
                 <TextInput
-                  className="border border-zinc-300 rounded-xl px-4 py-3 text-dark"
+                  className={`border rounded-xl px-4 py-3 ${isDark ? 'text-white bg-zinc-900' : 'text-gray-900 bg-white'}`}
+                  style={{ borderColor: COFFEE.accent }}
                   placeholder="CAFE-ABC-2024"
-                  placeholderTextColor="#a1a1aa"
+                  placeholderTextColor={isDark ? '#71717a' : '#a1a1aa'}
                   value={inviteCode}
                   onChangeText={setInviteCode}
                   autoCapitalize="characters"
@@ -192,9 +235,12 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
                 onPress={() => navigation.navigate('Login')}
                 className="items-center"
               >
-                <Text className="text-zinc-600 text-sm">
+                <Text
+                  className="text-sm"
+                  style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+                >
                   ¿Ya tienes cuenta?{' '}
-                  <Text className="text-amber-500 font-medium">
+                  <Text className="font-medium" style={{ color: COFFEE.accent }}>
                     Inicia sesión
                   </Text>
                 </Text>

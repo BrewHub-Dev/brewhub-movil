@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import { getItem, setItem, deleteItem } from '@/shared/services/storage';
 import type { AuthUser } from '../types/auth.types';
 
 const SESSION_KEY = 'brewhub_session';
@@ -25,17 +25,17 @@ export async function saveSession(token: string, user: AuthUser): Promise<void> 
     user,
     expiresAt: parseJWTExpiry(token),
   };
-  await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
+  await setItem(SESSION_KEY, JSON.stringify(session));
 }
 
 export async function getSession(): Promise<StoredSession | null> {
-  const raw = await SecureStore.getItemAsync(SESSION_KEY);
+  const raw = await getItem(SESSION_KEY);
   if (!raw) return null;
 
   const session: StoredSession = JSON.parse(raw);
 
   if (Date.now() >= session.expiresAt) {
-    await SecureStore.deleteItemAsync(SESSION_KEY);
+    await deleteItem(SESSION_KEY);
     return null;
   }
 
@@ -43,5 +43,5 @@ export async function getSession(): Promise<StoredSession | null> {
 }
 
 export async function clearSession(): Promise<void> {
-  await SecureStore.deleteItemAsync(SESSION_KEY);
+  await deleteItem(SESSION_KEY);
 }

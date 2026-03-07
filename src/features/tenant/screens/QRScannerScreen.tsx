@@ -3,30 +3,38 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   TouchableOpacity,
   Linking,
+  Platform,
+  TextInput,
+  useColorScheme,
 } from 'react-native';
-import { CameraView, Camera } from 'expo-camera';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { X } from 'lucide-react-native';
+import { X, QrCode } from 'lucide-react-native';
 import { useTenant } from '../providers/TenantProvider';
-import { useScan } from '../hooks/useScan';
 import { apiClient } from '@/shared/services/apiClient';
+import { showAlert } from '@/shared/services/alert';
 
 export const QRScannerScreen = () => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanProcessed, setScanProcessed] = useState(false);
+  const [manualCode, setManualCode] = useState('');
+  const [isValidating, setIsValidating] = useState(false);
   const isProcessingRef = useRef(false);
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { setTenant } = useTenant();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const fromRegister = route.params?.fromRegister || false;
+  const isWeb = Platform.OS === 'web';
 
   useEffect(() => {
-    requestCameraPermission();
+    if (!isWeb) {
+      requestCameraPermission();
+    }
   }, []);
 
   const extractInviteCode = (rawData: string) => {
@@ -34,20 +42,16 @@ export const QRScannerScreen = () => {
     if (!value) {
       throw new Error('Código QR vacío');
     }
-    let inviteCode = value;
-    if (!inviteCode) {
-      throw new Error('Código QR inválido');
-    }
-
-    return inviteCode;
+    return value;
   };
 
   const requestCameraPermission = async () => {
+    const { Camera } = await import('expo-camera');
     const { status } = await Camera.requestCameraPermissionsAsync();
     setHasPermission(status === 'granted');
 
     if (status !== 'granted') {
-      Alert.alert(
+      showAlert(
         'Permiso Requerido',
         'Necesitamos acceso a la cámara para escanear códigos QR.',
         [
@@ -61,15 +65,14 @@ export const QRScannerScreen = () => {
     }
   };
 
-  const handleScan = async (data: string) => {
+  const handleValidateCode = async (data: string) => {
     if (isProcessingRef.current || scanProcessed) return;
 
     isProcessingRef.current = true;
+    setIsValidating(true);
 
     try {
       const inviteCode = extractInviteCode(data);
-
-      console.log('Validating invite code:', inviteCode);
 
       const response = await apiClient.post('/invitations/validate', {
         inviteCode,
@@ -80,7 +83,7 @@ export const QRScannerScreen = () => {
       setScanProcessed(true);
 
       if (fromRegister) {
-        Alert.alert(
+        showAlert(
           'Código Válido',
           `Tienda: ${tenant.name}`,
           [
@@ -94,8 +97,6 @@ export const QRScannerScreen = () => {
         );
         return;
       }
-
-      console.log('Tenant info received:', tenant);
 
       await setTenant({
         tenantId: tenant.tenantId,
@@ -112,25 +113,78 @@ export const QRScannerScreen = () => {
         ? `No se pudo conectar con el backend (${apiClient.defaults.baseURL}).`
         : error.response?.data?.error || 'Código QR inválido. Por favor, intenta de nuevo.';
 
-      Alert.alert('Error', errorMessage, [
+      showAlert('Error', errorMessage, [
         {
           text: 'Reintentar',
           onPress: () => {
             isProcessingRef.current = false;
             setScanProcessed(false);
-            resume();
           },
         },
       ]);
+    } finally {
+      setIsValidating(false);
     }
   };
 
-  const { onBarCodeScanned, isProcessing, resume } = useScan({
-    onScan: handleScan,
-    cooldownMs: 10000,
-    sameCodeCooldownMs: 15000,
-    enabled: !scanProcessed,
-  });
+  if (isWeb) {
+    return (
+      <View className={`flex-1 justify-center items-center px-6 ${isDark ? 'bg-zinc-950' : 'bg-white'}`}>
+        <TouchableOpacity
+          style={{ position: 'absolute', top: 60, left: 20 }}
+          onPress={() => navigation.goBack()}
+        >
+          <X size={24} color={isDark ? '#fff' : '#18181b'} />
+        </TouchableOpacity>
+
+        <View className={`w-20 h-20 rounded-2xl bg-amber-500 items-center justify-center mb-6`}>
+          <QrCode size={40} color="#18181b" />
+        </View>
+
+        <Text className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          Ingresa el código
+        </Text>
+        <Text className={`text-center mb-8 ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+          La cámara no está disponible en web.{'\n'}Ingresa el código de invitación manualmente.
+        </Text>
+
+        <TextInput
+          className={`w-full border rounded-xl px-4 py-4 text-center text-lg font-bold mb-4 ${
+            isDark ? 'border-zinc-700 text-white bg-zinc-900' : 'border-zinc-300 text-gray-900 bg-white'
+          }`}
+          placeholder="CAFE-ABC-2024"
+          placeholderTextColor={isDark ? '#71717a' : '#a1a1aa'}
+          value={manualCode}
+          onChangeText={setManualCode}
+          autoCapitalize="characters"
+        />
+
+        <TouchableOpacity
+          className={`w-full py-4 rounded-xl items-center ${
+            isValidating || !manualCode.trim() ? 'bg-amber-700 opacity-60' : 'bg-amber-500'
+          }`}
+          onPress={() => handleValidateCode(manualCode)}
+          disabled={isValidating || !manualCode.trim()}
+        >
+          {isValidating ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text className="text-white font-bold text-base">Validar código</Text>
+          )}
+        </TouchableOpacity>
+
+        <Text className={`text-center text-sm mt-6 ${isDark ? 'text-zinc-500' : 'text-gray-400'}`}>
+          {fromRegister
+            ? 'Pide el código de invitación al personal de la tienda'
+            : 'Ingresa el código para vincular tu cuenta a una tienda'}
+        </Text>
+      </View>
+    );
+  }
+
+  const NativeCameraScanner = React.lazy(() =>
+    import('../components/NativeCameraScanner').then((mod) => ({ default: mod.NativeCameraScanner }))
+  );
 
   if (hasPermission === null) {
     return (
@@ -153,111 +207,28 @@ export const QRScannerScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <CameraView
-        style={styles.camera}
-        onBarcodeScanned={isProcessing ? undefined : onBarCodeScanned}
-        barcodeScannerSettings={{
-          barcodeTypes: ['qr'],
-        }}
-      />
-
-      <View style={styles.overlay}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => navigation.goBack()}
-          >
-            <X size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.scanArea}>
-          <View style={styles.scanFrame} />
-          <Text style={styles.instructionText}>
-            Escanea el código QR de tu tienda
-          </Text>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            {fromRegister
-              ? 'Pide el código QR al personal de la tienda'
-              : 'Escanea el QR para vincular tu cuenta a una tienda'}
-          </Text>
-        </View>
+    <React.Suspense fallback={
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#000" />
       </View>
-
-      {isProcessing && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.loadingOverlayText}>Validando...</Text>
-        </View>
-      )}
-    </View>
+    }>
+      <NativeCameraScanner
+        fromRegister={fromRegister}
+        scanProcessed={scanProcessed}
+        onScan={handleValidateCode}
+        onClose={() => navigation.goBack()}
+      />
+    </React.Suspense>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
     padding: 20,
-  },
-  camera: {
-    flex: 1,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-  },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanFrame: {
-    width: 250,
-    height: 250,
-    borderWidth: 2,
-    borderColor: '#fff',
-    borderRadius: 12,
-    backgroundColor: 'transparent',
-  },
-  instructionText: {
-    marginTop: 20,
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  footer: {
-    paddingBottom: 60,
-    paddingHorizontal: 20,
-  },
-  footerText: {
-    color: '#fff',
-    fontSize: 14,
-    textAlign: 'center',
-    opacity: 0.8,
   },
   loadingText: {
     marginTop: 12,
@@ -280,16 +251,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingOverlayText: {
-    marginTop: 12,
-    color: '#fff',
-    fontSize: 16,
   },
 });

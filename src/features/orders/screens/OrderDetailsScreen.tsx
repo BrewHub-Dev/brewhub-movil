@@ -53,7 +53,11 @@ export function OrderDetailsScreen({ navigation, route }: Readonly<OrderDetailsS
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['order', orderId],
     queryFn: () => getOrderById(orderId),
-    refetchInterval: 5000,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === 'completed' || status === 'cancelled') return false;
+      return 10_000;
+    },
   });
 
   if (isLoading) {

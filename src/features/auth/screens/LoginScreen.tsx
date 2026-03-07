@@ -8,16 +8,28 @@ import {
   StatusBar,
   Image,
   TouchableOpacity,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LoginForm } from '../components/LoginForm';
+import { COFFEE } from '../../orders/constants/coffee';
 import type { LoginScreenProps } from '../../../navigation/types';
 
 export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor="#09090b" />
+    <SafeAreaView
+      className="flex-1"
+      style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}
+      edges={['top', 'bottom']}
+    >
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={isDark ? '#09090b' : COFFEE.cream}
+      />
 
       <KeyboardAvoidingView
         className="flex-1"
@@ -37,19 +49,37 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
                 style={{ width: 48, height: 48 }}
               />
               </View>
-              <Text className="text-dark text-4xl font-bold tracking-tight">
+              <Text
+                className="text-4xl font-bold tracking-tight"
+                style={{ color: isDark ? '#fafaf9' : COFFEE.darkRoast }}
+              >
                 Brewsy
               </Text>
-              <Text className="text-zinc-400 text-base mt-2">
+              <Text
+                className="text-base mt-2"
+                style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+              >
                 Crea tus ordenes y monitorea su progreso en tiempo real
               </Text>
             </View>
 
-            <View className="w-full rounded-2xl p-6 border border-zinc-300">
-              <Text className="text-dark text-xl font-bold mb-1">
+            <View
+              className="w-full rounded-2xl p-6 border"
+              style={{
+                backgroundColor: isDark ? COFFEE.darkRoast : '#fff',
+                borderColor: COFFEE.accent,
+              }}
+            >
+              <Text
+                className="text-xl font-bold mb-1"
+                style={{ color: isDark ? '#fafaf9' : COFFEE.darkRoast }}
+              >
                 Bienvenido
               </Text>
-              <Text className="text-zinc-500 text-sm mb-6">
+              <Text
+                className="text-sm mb-6"
+                style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+              >
                 Ingresa tus credenciales para continuar
               </Text>
 
@@ -59,15 +89,21 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
                 onPress={() => navigation.navigate('Register')}
                 className="items-center mt-4"
               >
-                <Text className="text-zinc-600 text-sm">
+                <Text
+                  className="text-sm"
+                  style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+                >
                   ¿No tienes cuenta?{' '}
-                  <Text className="text-amber-500 font-medium">
+                  <Text className="font-medium" style={{ color: COFFEE.accent }}>
                     Regístrate
                   </Text>
                 </Text>
               </TouchableOpacity>
 
-              <Text className="text-zinc-600 text-xs text-center mt-5">
+              <Text
+                className="text-xs text-center mt-5"
+                style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+              >
                 version 1.0.0
               </Text>
             </View>

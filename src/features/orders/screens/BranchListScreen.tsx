@@ -7,11 +7,66 @@ import {
   ActivityIndicator,
   useColorScheme,
 } from 'react-native';
-import { Phone } from 'lucide-react-native';
+import { MapPin, Phone, ChevronRight } from 'lucide-react-native';
+import { COFFEE } from '../constants/coffee';
 import { useQuery } from '@tanstack/react-query';
 import { getBranches } from '../services/branchService';
 import type { Branch } from '@/shared/types/branches.types';
 import type { BranchListScreenProps } from '@/navigation/types';
+
+function Separator() {
+  return <View style={{ height: 12 }} />;
+}
+
+function BranchCard({
+  item,
+  isDark,
+  onPress,
+}: Readonly<{ item: Branch; isDark: boolean; onPress: () => void }>) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85}
+      className="rounded-3xl overflow-hidden"
+      style={{ backgroundColor: isDark ? COFFEE.darkRoast : '#fff' }}
+    >
+      <View className="h-1.5" style={{ backgroundColor: COFFEE.accent }} />
+      <View className="p-5">
+        <View className="flex-row items-start justify-between mb-3">
+          <Text
+            className="text-lg font-bold flex-1 mr-3"
+            style={{ color: isDark ? '#fafaf9' : COFFEE.darkRoast }}
+          >
+            {item.name}
+          </Text>
+          <View
+            className="w-9 h-9 rounded-2xl items-center justify-center"
+            style={{ backgroundColor: COFFEE.accent }}
+          >
+            <ChevronRight size={18} color="#fff" />
+          </View>
+        </View>
+        <View className="flex-row items-center mb-2">
+          <MapPin size={14} color={isDark ? COFFEE.latte : COFFEE.mocha} />
+          <Text
+            className="text-sm ml-2 flex-1"
+            numberOfLines={1}
+            style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+          >
+            {item.address.street}, {item.address.city}
+          </Text>
+        </View>
+        <View className="flex-row items-center">
+          <Phone size={14} color={isDark ? COFFEE.latte : COFFEE.mocha} />
+          <Text
+            className="text-sm ml-2"
+            style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+          >
+            {item.phone}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>) {
   const colorScheme = useColorScheme();
@@ -28,9 +83,15 @@ export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>
 
   if (isLoading) {
     return (
-      <View className={`flex-1 justify-center items-center ${isDark ? 'bg-zinc-950' : 'bg-white'}`}>
-        <ActivityIndicator size="large" color="#f59e0b" />
-        <Text className={`mt-4 ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}
+      >
+        <ActivityIndicator size="large" color={COFFEE.mocha} />
+        <Text
+          className="mt-4 text-sm"
+          style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+        >
           Cargando tiendas...
         </Text>
       </View>
@@ -39,11 +100,20 @@ export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>
 
   if (error) {
     return (
-      <View className={`flex-1 justify-center items-center ${isDark ? 'bg-zinc-950' : 'bg-white'} px-6`}>
-        <Text className="text-red-500 text-center text-lg">
+      <View
+        className="flex-1 justify-center items-center px-6"
+        style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}
+      >
+        <Text
+          style={{ color: isDark ? '#f87171' : '#ef4444' }}
+          className="text-center text-lg"
+        >
           Error al cargar las tiendas
         </Text>
-        <Text className={`${isDark ? 'text-zinc-400' : 'text-gray-600'} text-center mt-2`}>
+        <Text
+          className="text-center mt-2 text-sm"
+          style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+        >
           {error instanceof Error ? error.message : 'Ocurrió un error'}
         </Text>
       </View>
@@ -52,8 +122,14 @@ export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>
 
   if (!branches || branches.length === 0) {
     return (
-      <View className={`flex-1 justify-center items-center ${isDark ? 'bg-zinc-950' : 'bg-white'} px-6`}>
-        <Text className={`${isDark ? 'text-zinc-400' : 'text-gray-600'} text-center text-lg`}>
+      <View
+        className="flex-1 justify-center items-center px-6"
+        style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}
+      >
+        <Text
+          className="text-center text-lg"
+          style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+        >
           No hay tiendas disponibles
         </Text>
       </View>
@@ -61,56 +137,17 @@ export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>
   }
 
   return (
-
-    <View className={`flex-1 ${isDark ? 'bg-zinc-900' : 'bg-gray-50'}`}>
-      <View className={`${isDark ? 'bg-zinc-950' : 'bg-white'} px-6 py-4 border-b ${isDark ? 'border-zinc-800' : 'border-gray-200'}`}>
-        <Text className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-          Selecciona una tienda
-        </Text>
-        <Text className={`${isDark ? 'text-zinc-400' : 'text-gray-600'} mt-1`}>
-          Elige la sucursal donde quieres ordenar
-        </Text>
-      </View>
-
+    <View
+      className="flex-1"
+      style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}
+    >
       <FlatList
         data={branches}
         keyExtractor={(item) => item._id}
-        contentContainerClassName="pt-4 pb-4"
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 }}
+        ItemSeparatorComponent={Separator}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => handleBranchPress(item)}
-            className={`${isDark ? 'bg-zinc-900' : 'bg-white'} mx-4 mb-4 rounded-xl border ${isDark ? 'border-zinc-800' : 'border-gray-200'}`}
-            activeOpacity={0.7}
-          >
-            <View className="p-4">
-              <Text className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'} mb-2`}>
-                {item.name}
-              </Text>
-
-              <View>
-                <Text className={isDark ? 'text-zinc-400' : 'text-gray-600'}>
-                  {item.address.street}
-                </Text>
-                <Text className={isDark ? 'text-zinc-400' : 'text-gray-600'}>
-                  {item.address.city}, {item.address.state} {item.address.zip}
-                </Text>
-                <Text className="flex-row items-center mt-2">
-                  <Phone size={10} color={isDark ? "#a1a1aa" : "#6b7280"} />{' '}
-                  <Text className={isDark ? 'text-zinc-400' : 'text-gray-600'}>
-                  {item.phone}
-                  </Text>
-                </Text>
-              </View>
-
-              <View className="mt-4 flex-row justify-end">
-                <View className={`${isDark ? 'bg-amber-950' : 'bg-amber-100'} px-4 py-2 rounded-lg`}>
-                  <Text className={`${isDark ? 'text-amber-200' : 'text-amber-800'} font-semibold`}>
-                    Ver menú →
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </TouchableOpacity>
+          <BranchCard item={item} isDark={isDark} onPress={() => handleBranchPress(item)} />
         )}
       />
     </View>

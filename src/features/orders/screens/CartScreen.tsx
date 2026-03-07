@@ -4,11 +4,10 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
-  ScrollView,
   useColorScheme,
 } from 'react-native';
+import { showAlert } from '@/shared/services/alert';
 import {
   CreditCard,
   Banknote,
@@ -18,7 +17,9 @@ import {
   Check,
   Minus,
   Plus,
+  ChevronRight,
 } from 'lucide-react-native';
+import { COFFEE } from '../constants/coffee';
 import { useMutation } from '@tanstack/react-query';
 import { useCart } from '../providers/CartProvider';
 import { createOrder } from '../services/orderService';
@@ -30,9 +31,9 @@ const PAYMENT_METHODS: {
   label: string;
   icon: React.ReactElement;
 }[] = [
-  { value: 'card', label: 'Tarjeta', icon: <CreditCard size={20} /> },
-  { value: 'cash', label: 'Efectivo', icon: <Banknote size={20} /> },
-  { value: 'wallet', label: 'Wallet', icon: <Smartphone size={20} /> },
+  { value: 'card', label: 'Tarjeta', icon: <CreditCard size={22} /> },
+  { value: 'cash', label: 'Efectivo', icon: <Banknote size={22} /> },
+  { value: 'wallet', label: 'Wallet', icon: <Smartphone size={22} /> },
 ];
 
 export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
@@ -45,9 +46,9 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
   const createOrderMutation = useMutation({
     mutationFn: createOrder,
     onSuccess: (order) => {
-      Alert.alert(
+      showAlert(
         '¡Orden creada!',
-        `Tu orden #${order.orderNumber} ha sido creada exitosamente`,
+        `Tu orden #${order.orderNumber} ha sido procesada con éxito.`,
         [
           {
             text: 'Ver orden',
@@ -60,19 +61,16 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
       );
     },
     onError: (error: Error) => {
-      Alert.alert('Error', error.message);
+      showAlert('Error', error.message);
     },
   });
 
   const handleCheckout = () => {
-    if (cart.cartItems.length === 0) {
-      Alert.alert('Carrito vacío', 'Agrega productos antes de continuar');
-      return;
-    }
+    if (cart.cartItems.length === 0) return;
 
-    Alert.alert(
+    showAlert(
       'Confirmar orden',
-      `Total: $${cart.subtotal.toFixed(2)}\n¿Deseas confirmar tu orden?`,
+      `El total es $${cart.subtotal.toFixed(2)}\n¿Deseas confirmar tu orden ahora?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -91,183 +89,259 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
 
   if (cart.cartItems.length === 0) {
     return (
-      <View className={`flex-1 justify-center items-center ${isDark ? 'bg-zinc-950' : 'bg-white'} px-6`}>
-        <ShoppingCart
-          size={64}
-          color={isDark ? '#a1a1aa' : '#6b7280'}
-          style={{ marginBottom: 16 }}
-        />
-        <Text className={`${isDark ? 'text-zinc-400' : 'text-gray-600'} text-center text-lg mb-6`}>
+      <View
+        className="flex-1 justify-center items-center px-6"
+        style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}
+      >
+        <View
+          className="p-6 rounded-full mb-6"
+          style={{ backgroundColor: isDark ? COFFEE.darkRoast : '#fff' }}
+        >
+          <ShoppingCart
+            size={80}
+            color={isDark ? COFFEE.latte : '#9ca3af'}
+          />
+        </View>
+        <Text
+          className="text-2xl font-bold mb-2"
+          style={{ color: isDark ? '#fafaf9' : COFFEE.darkRoast }}
+        >
           Tu carrito está vacío
+        </Text>
+        <Text
+          className="text-center text-base mb-8"
+          style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+        >
+          Parece que aún no has agregado nada. ¡Descubre nuestro menú!
         </Text>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          className="bg-amber-600 py-3 px-6 rounded-xl"
+          activeOpacity={0.8}
+          style={{
+            backgroundColor: COFFEE.mocha,
+            paddingVertical: 16,
+            paddingHorizontal: 32,
+            borderRadius: 24,
+            flexDirection: 'row',
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOpacity: 0.1,
+            shadowRadius: 10,
+          }}
         >
-          <Text className="text-white font-bold">Explorar menú</Text>
+          <Text className="text-white font-bold text-lg mr-2">
+            Explorar menú
+          </Text>
+          <ChevronRight size={20} color="white" />
         </TouchableOpacity>
       </View>
     );
   }
 
-  return (
-    <View className={`flex-1 ${isDark ? 'bg-zinc-900' : 'bg-gray-50'}`}>
-      <ScrollView className="flex-1">
-        <View className={`${isDark ? 'bg-zinc-950' : 'bg-white'} px-6 py-4 border-b ${isDark ? 'border-zinc-800' : 'border-gray-200'}`}>
-          <Text className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>Tu carrito</Text>
-          <Text className={`${isDark ? 'text-zinc-400' : 'text-gray-600'} mt-1`}>
-            {cart.itemCount} {cart.itemCount === 1 ? 'producto' : 'productos'}
-          </Text>
-        </View>
+  const ListHeader = () => (
+    <View className="px-6 py-6">
+      <Text
+        style={{ color: isDark ? '#fafaf9' : COFFEE.darkRoast }}
+        className="text-3xl font-extrabold"
+      >
+        Tu carrito
+      </Text>
+      <Text
+        style={{ color: isDark ? COFFEE.latte : COFFEE.mocha }}
+        className="text-base mt-1"
+      >
+        Tienes {cart.itemCount} {cart.itemCount === 1 ? 'producto' : 'productos'}
+      </Text>
+    </View>
+  );
 
-        <View className="mt-4">
-          <FlatList
-            data={cart.cartItems}
-            scrollEnabled={false}
-            keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item: cartItem, index }) => (
-              <View className={`${isDark ? 'bg-zinc-900' : 'bg-white'} mx-4 mb-3 rounded-xl p-4 border ${isDark ? 'border-zinc-800' : 'border-gray-200'}`}>
-                <View className="flex-row justify-between items-start mb-2">
-                  <View className="flex-1">
-                    <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                      {cartItem.item.name}
-                    </Text>
-
-                    {cartItem.selectedModifiers.length > 0 && (
-                      <View className="mt-1">
-                        {cartItem.selectedModifiers.map((mod, idx) => (
-                          <Text key={idx} className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>
-                            • {mod.name}: {mod.optionName}
-                          </Text>
-                        ))}
-                      </View>
-                    )}
-
-                    {cartItem.notes && (
-                      <Text className={`text-sm ${isDark ? 'text-zinc-500' : 'text-gray-500'} italic mt-1`}>
-                        Nota: {cartItem.notes}
-                      </Text>
-                    )}
-                  </View>
-
-                  <TouchableOpacity
-                    onPress={() => cart.removeFromCart(index)}
-                    className="ml-2"
-                  >
-                    <Trash2 size={20} color="#ef4444" />
-                  </TouchableOpacity>
-                </View>
-
-                <View className={`flex-row justify-between items-center mt-3 pt-3 border-t ${isDark ? 'border-zinc-800' : 'border-gray-100'}`}>
-                  <View className={`flex-row items-center ${isDark ? 'bg-zinc-800' : 'bg-gray-100'} rounded-lg`}>
-                    <TouchableOpacity
-                      onPress={() => cart.updateQuantity(index, cartItem.quantity - 1)}
-                      className="px-4 py-2"
-                    >
-                      <Minus size={18} color={isDark ? '#d4d4d8' : '#374151'} />
-                    </TouchableOpacity>
-
-                    <Text className={`px-4 font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                      {cartItem.quantity}
-                    </Text>
-
-                    <TouchableOpacity
-                      onPress={() => cart.updateQuantity(index, cartItem.quantity + 1)}
-                      className="px-4 py-2"
-                    >
-                      <Plus size={18} color={isDark ? '#d4d4d8' : '#374151'} />
-                    </TouchableOpacity>
-                  </View>
-
-                  <Text className={`text-lg font-bold ${isDark ? 'text-amber-500' : 'text-amber-700'}`}>
-                    ${cart.calculateItemTotal(cartItem).toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-            )}
-          />
-        </View>
-
-        <View className={`${isDark ? 'bg-zinc-900' : 'bg-white'} mx-4 mt-4 rounded-xl p-4 border ${isDark ? 'border-zinc-800' : 'border-gray-200'}`}>
-          <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'} mb-3`}>
-            Método de pago
-          </Text>
-
+  const ListFooter = () => (
+    <View className="px-4 pb-8 mt-2">
+      <View
+        style={{
+          backgroundColor: isDark ? COFFEE.darkRoast + 'cc' : '#fff',
+        }}
+        className="rounded-3xl p-5 mb-4 border"
+      >
+        <Text className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          Método de pago
+        </Text>
+        <View className="flex-col gap-y-3">
           {PAYMENT_METHODS.map((method) => {
             const isSelected = paymentMethod === method.value;
-
             return (
               <TouchableOpacity
                 key={method.value}
                 onPress={() => setPaymentMethod(method.value)}
-                className={`flex-row items-center p-4 rounded-lg border-2 mb-2 ${
+                activeOpacity={0.7}
+                className={`flex-row items-center p-4 rounded-2xl border ${
                   isSelected
-                    ? `border-amber-500 ${isDark ? 'bg-amber-950' : 'bg-amber-50'}`
-                    : `${isDark ? 'border-zinc-700 bg-zinc-800' : 'border-gray-200 bg-white'}`
+                    ? `border-amber-500 ${isDark ? 'bg-amber-500/10' : 'bg-amber-50'}`
+                    : `${isDark ? 'border-zinc-800 bg-zinc-800/50' : 'border-gray-200 bg-gray-50'}`
                 }`}
               >
-                <View className="mr-3">
+                <View className={`p-2 rounded-full mr-4 ${isSelected ? (isDark ? 'bg-amber-500/20' : 'bg-amber-100') : (isDark ? 'bg-zinc-700' : 'bg-white shadow-sm')}`}>
                   {React.cloneElement(method.icon as React.ReactElement<any>, {
-                    color: isSelected
-                      ? '#f59e0b'
-                      : isDark
-                      ? '#ffffff'
-                      : '#374151',
+                    color: isSelected ? '#f59e0b' : isDark ? '#a1a1aa' : '#6b7280',
                   })}
                 </View>
-
-                <Text
-                  className={`font-medium flex-1 ${
-                    isSelected
-                      ? `${isDark ? 'text-amber-200' : 'text-amber-800'}`
-                      : `${isDark ? 'text-white' : 'text-gray-800'}`
-                  }`}
-                >
+                <Text className={`font-semibold text-base flex-1 ${isSelected ? (isDark ? 'text-amber-400' : 'text-amber-700') : (isDark ? 'text-zinc-300' : 'text-gray-700')}`}>
                   {method.label}
                 </Text>
-
-                {isSelected && <Check size={20} color="#f59e0b" />}
+                {isSelected && (
+                  <View className="bg-amber-500 rounded-full p-1">
+                    <Check size={14} color="white" />
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })}
         </View>
+      </View>
 
-        <View className={`${isDark ? 'bg-zinc-900' : 'bg-white'} mx-4 mt-4 mb-4 rounded-xl p-4 border ${isDark ? 'border-zinc-800' : 'border-gray-200'}`}>
-          <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'} mb-3`}>
-            Resumen
+      <View
+        style={{
+          backgroundColor: isDark ? COFFEE.darkRoast + 'cc' : '#fff',
+        }}
+        className="rounded-3xl p-5 border"
+      >
+        <Text className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          Resumen de compra
+        </Text>
+        <View className="flex-row justify-between mb-3">
+          <Text className={`text-base ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>Subtotal</Text>
+          <Text className={`text-base font-medium ${isDark ? 'text-zinc-300' : 'text-gray-700'}`}>
+            ${cart.subtotal.toFixed(2)}
           </Text>
-
-          <View className="flex-row justify-between">
-            <Text className={isDark ? 'text-zinc-400' : 'text-gray-600'}>Subtotal</Text>
-            <Text className={`${isDark ? 'text-white' : 'text-gray-800'} font-medium`}>
-              ${cart.subtotal.toFixed(2)}
-            </Text>
-          </View>
-
-          <View className={`flex-row justify-between pt-3 border-t ${isDark ? 'border-zinc-800' : 'border-gray-200'} mt-3`}>
-            <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>Total</Text>
-            <Text className={`text-lg font-bold ${isDark ? 'text-amber-500' : 'text-amber-700'}`}>
-              ${cart.subtotal.toFixed(2)}
-            </Text>
-          </View>
         </View>
-      </ScrollView>
+        <View className={`flex-row justify-between pt-4 border-t ${isDark ? 'border-zinc-800' : 'border-gray-100'}`}>
+          <Text className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Total</Text>
+          <Text className={`text-xl font-black ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+            ${cart.subtotal.toFixed(2)}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
 
-      <View className={`${isDark ? 'bg-zinc-900' : 'bg-white'} border-t ${isDark ? 'border-zinc-800' : 'border-gray-200'} p-4`}>
+  return (
+    <View
+      className="flex-1"
+      style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}
+    >
+      <FlatList
+        data={cart.cartItems}
+        keyExtractor={(_, index) => index.toString()}
+        ListHeaderComponent={ListHeader}
+        ListFooterComponent={ListFooter}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        renderItem={({ item: cartItem, index }) => (
+          <View
+          className="mx-4 mb-4 rounded-3xl p-5 border"
+          style={{
+            backgroundColor: isDark ? COFFEE.darkRoast : '#fff',
+            borderColor: isDark ? '#27272a' : '#e5e7eb',
+          }}
+        >
+            
+            <View className="flex-row justify-between items-start mb-3">
+              <View className="flex-1 pr-4">
+                <Text className={`text-lg font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {cartItem.item.name}
+                </Text>
+                {cartItem.selectedModifiers.length > 0 && (
+                  <View className="flex-row flex-wrap gap-1 mt-1 mb-2">
+                    {cartItem.selectedModifiers.map((mod, idx) => (
+                      <View key={idx} className={`${isDark ? 'bg-zinc-800' : 'bg-gray-100'} px-2 py-1 rounded-md`}>
+                        <Text className={`text-xs ${isDark ? 'text-zinc-300' : 'text-gray-600'}`}>
+                          {mod.optionName}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                {cartItem.notes && (
+                  <Text className={`text-sm ${isDark ? 'text-amber-400/80' : 'text-amber-600'} italic`}>
+                    "{cartItem.notes}"
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={() => cart.removeFromCart(index)}
+                className={`p-2 rounded-full ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Trash2 size={20} color={isDark ? '#f87171' : '#ef4444'} />
+              </TouchableOpacity>
+            </View>
+
+            <View className={`flex-row justify-between items-center pt-4 mt-2 border-t ${isDark ? 'border-zinc-800' : 'border-gray-100'}`}>
+              <View className={`flex-row items-center rounded-2xl border ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-gray-50 border-gray-200'}`}>
+                <TouchableOpacity
+                  onPress={() => cart.updateQuantity(index, cartItem.quantity - 1)}
+                  className="p-3"
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Minus size={18} color={isDark ? '#a1a1aa' : '#4b5563'} />
+                </TouchableOpacity>
+                <Text className={`w-8 text-center font-bold text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {cartItem.quantity}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => cart.updateQuantity(index, cartItem.quantity + 1)}
+                  className="p-3"
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Plus size={18} color={isDark ? '#a1a1aa' : '#4b5563'} />
+                </TouchableOpacity>
+              </View>
+              <Text className={`text-xl font-black ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                ${cart.calculateItemTotal(cartItem).toFixed(2)}
+              </Text>
+            </View>
+          </View>
+        )}
+      />
+
+      <View
+        className="absolute bottom-0 w-full px-4 pt-4 pb-8"
+        style={{
+          backgroundColor: isDark ? '#09090bcc' : COFFEE.cream + 'cc',
+          borderTopWidth: 1,
+          borderColor: isDark ? '#27272a' : '#f3f4f6',
+        }}
+      >
         <TouchableOpacity
           onPress={handleCheckout}
           disabled={createOrderMutation.isPending}
-          className={`py-4 rounded-xl ${
-            createOrderMutation.isPending ? 'bg-gray-400' : 'bg-amber-600'
-          }`}
-          activeOpacity={0.8}
+          activeOpacity={0.9}
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: 16,
+            borderRadius: 24,
+            shadowColor: '#000',
+            shadowOpacity: 0.1,
+            shadowRadius: 10,
+            backgroundColor: createOrderMutation.isPending
+              ? (isDark ? COFFEE.darkRoast : COFFEE.latte)
+              : COFFEE.mocha,
+          }}
         >
           {createOrderMutation.isPending ? (
-            <ActivityIndicator color="white" />
+            <ActivityIndicator color="white" className="flex-1" />
           ) : (
-            <Text className="text-white text-center font-bold text-lg">
-              Confirmar orden • ${cart.subtotal.toFixed(2)}
-            </Text>
+            <>
+              <Text className="text-white font-bold text-lg">Confirmar orden</Text>
+              <View className="flex-row items-center bg-white/20 px-3 py-1.5 rounded-xl">
+                <Text className="text-white font-black text-lg">
+                  ${cart.subtotal.toFixed(2)}
+                </Text>
+                <ChevronRight size={20} color="white" style={{ marginLeft: 4 }} />
+              </View>
+            </>
           )}
         </TouchableOpacity>
       </View>

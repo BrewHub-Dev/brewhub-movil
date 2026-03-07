@@ -31,4 +31,5 @@ export interface Item {
   taxIncluded: boolean;
   images?: string[];
   modifiers?: ItemModifier[];
+  rating?: number;
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ActivityIndicator, useColorScheme } from 'react-native';
+import { View, ActivityIndicator, Platform, useColorScheme } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -16,6 +16,23 @@ import { useSession } from '../features/auth/hooks/useSession';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const linking = {
+  prefixes: ['brewhub://', 'http://localhost:8081'],
+  config: {
+    screens: {
+      Login: 'login',
+      Register: 'register',
+      QRScanner: 'qr-scanner',
+      Home: 'home',
+      BranchList: 'branches',
+      Menu: 'menu/:branchId',
+      Cart: 'cart/:branchId',
+      MyOrders: 'my-orders',
+      OrderDetails: 'order/:orderId',
+    },
+  },
+};
 
 const CustomDarkTheme = {
   ...DarkTheme,
@@ -60,7 +77,11 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer theme={isDark ? CustomDarkTheme : CustomLightTheme}>
+    <NavigationContainer
+      theme={isDark ? CustomDarkTheme : CustomLightTheme}
+      linking={Platform.OS === 'web' ? linking : undefined}
+      documentTitle={{ formatter: () => 'BrewHub' }}
+    >
       <Stack.Navigator
         initialRouteName={isAuthenticated ? 'Home' : 'Login'}
         screenOptions={{

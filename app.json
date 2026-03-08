@@ -28,6 +28,12 @@
     },
     "plugins": [
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f70f24f8-346a-475a-ba64-03689b26bb6f"
+      }
+    },
+    "owner": "whoistymo"
   }
 }

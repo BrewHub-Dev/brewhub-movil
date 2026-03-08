@@ -14,6 +14,7 @@ import { MyOrdersScreen } from '../features/orders/screens/MyOrdersScreen';
 import { OrderDetailsScreen } from '../features/orders/screens/OrderDetailsScreen';
 import { useSession } from '../features/auth/hooks/useSession';
 import { useTenant } from '../features/tenant/providers/TenantProvider';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -62,6 +63,7 @@ const CustomLightTheme = {
 export function RootNavigator() {
   const { isAuthenticated, isLoading } = useSession();
   const { tenant, isLoading: isTenantLoading } = useTenant();
+  usePushNotifications(isAuthenticated);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 

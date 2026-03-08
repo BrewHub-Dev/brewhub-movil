@@ -9,20 +9,21 @@ import {
   useColorScheme,
 } from 'react-native';
 import { ShoppingBag } from 'lucide-react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../../auth/hooks/useSession';
+import { useSocket } from '../../../hooks/useSocket';
 import { getMyOrders } from '../services/orderService';
 import type { MyOrdersScreenProps } from '../../../navigation/types';
 import type { Order } from '../../../shared/types/orders.types';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending:   { label: 'Pendiente',       color: 'text-orange-500' },
-  confirmed: { label: 'Confirmada',      color: 'text-blue-500'   },
-  preparing: { label: 'En preparación',  color: 'text-purple-500' },
-  ready:     { label: 'Lista',           color: 'text-green-500'  },
-  completed: { label: 'Completada',      color: 'text-zinc-400'   },
-  cancelled: { label: 'Cancelada',       color: 'text-red-500'    },
+  pending: { label: 'Pendiente', color: 'text-orange-500' },
+  confirmed: { label: 'Confirmada', color: 'text-blue-500' },
+  preparing: { label: 'En preparación', color: 'text-purple-500' },
+  ready: { label: 'Lista', color: 'text-green-500' },
+  completed: { label: 'Completada', color: 'text-zinc-400' },
+  cancelled: { label: 'Cancelada', color: 'text-red-500' },
 };
 
 function OrderCard({ order, onPress }: Readonly<{ order: Order; onPress: () => void }>) {
@@ -66,6 +67,8 @@ function OrderCard({ order, onPress }: Readonly<{ order: Order; onPress: () => v
 export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
   const isDark = useColorScheme() === 'dark';
   const { user } = useSession();
+  const queryClient = useQueryClient();
+  const { socket } = useSocket();
 
   const { data: orders, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['my-orders', user?._id],
@@ -73,6 +76,21 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
     enabled: !!user?._id,
     refetchInterval: 60_000,
   });
+
+  React.useEffect(() => {
+    if (!socket) return;
+
+    const handleOrderUpdate = (data: any) => {
+      console.log('[MyOrders] order:updated received:', data);
+      refetch();
+    };
+
+    socket.on('order:updated', handleOrderUpdate);
+
+    return () => {
+      socket.off('order:updated', handleOrderUpdate);
+    };
+  }, [socket, refetch]);
 
   const pending = orders?.filter((o) => !['completed', 'cancelled'].includes(o.status)) ?? [];
   const history = orders?.filter((o) => ['completed', 'cancelled'].includes(o.status)) ?? [];

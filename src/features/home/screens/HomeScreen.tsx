@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,25 +6,41 @@ import {
   StatusBar,
   useColorScheme,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { COFFEE } from '../../orders/constants/coffee';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, ShoppingCart, ClipboardList, Bell, Coffee } from 'lucide-react-native';
+import { User, ShoppingCart, ClipboardList, Bell, Coffee, MapPin, Phone, ChevronRight } from 'lucide-react-native';
 import { useSession } from '@/features/auth/hooks/useSession';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { getCountDashboard } from '../services/homeService';
+import { useTenant } from '@/features/tenant/providers/TenantProvider';
+import { getBranchesByShopId } from '@/features/orders/services/branchService';
+import { useQuery } from '@tanstack/react-query';
 import type { HomeScreenProps } from '@/navigation/types';
+import type { Branch } from '@/shared/types/branches.types';
+import {
+  BottomSheetModal,
+  BottomSheetFlatList,
+  BottomSheetBackdrop,
+} from '@gorhom/bottom-sheet';
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 
 export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
   const { user } = useSession();
   const logout = useLogout();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { tenant } = useTenant();
 
-  async function handleLogout() {
-    await logout();
-    navigation.replace('Login');
-  }
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const snapPoints = useMemo(() => ['50%', '80%'], []);
+
+  const { data: branches, isLoading: branchesLoading } = useQuery({
+    queryKey: ['branches', tenant?.tenantId],
+    queryFn: () => getBranchesByShopId(tenant!.tenantId),
+    enabled: !!tenant?.tenantId,
+  });
 
   const [dashboardCounts, setDashboardCounts] = React.useState<{
     total: number;
@@ -46,9 +62,32 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
     fetchDashboardCounts();
   }, [user?._id]);
 
+  async function handleLogout() {
+    await logout();
+    navigation.replace('Login');
+  }
+
+  const handleOpenBranches = useCallback(() => {
+    bottomSheetRef.current?.present();
+  }, []);
+
+  const handleBranchPress = useCallback((branch: Branch) => {
+    bottomSheetRef.current?.dismiss();
+    navigation.navigate('Menu', { branchId: branch._id, branchName: branch.name });
+  }, [navigation]);
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />
+    ),
+    []
+  );
+
   const cardBg = isDark ? '#18181b' : '#fff';
   const subtextColor = isDark ? '#a1a1aa' : COFFEE.mocha;
   const titleColor = isDark ? '#fafaf9' : COFFEE.darkRoast;
+  const sheetBg = isDark ? '#18181b' : '#fff';
+  const handleColor = isDark ? '#3f3f46' : '#d4d4d4';
 
   return (
     <SafeAreaView
@@ -94,7 +133,7 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
           </Text>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('BranchList')}
+            onPress={handleOpenBranches}
             activeOpacity={0.85}
             className="flex-row items-center rounded-2xl px-4 py-4 mb-2"
             style={{ backgroundColor: cardBg }}
@@ -146,7 +185,7 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
           </Text>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('BranchList')}
+            onPress={handleOpenBranches}
             activeOpacity={0.85}
             className="rounded-3xl mb-3"
             style={{
@@ -208,6 +247,72 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
           Cerrar Sesión
         </Text>
       </TouchableOpacity>
+
+      <BottomSheetModal
+        ref={bottomSheetRef}
+        snapPoints={snapPoints}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: sheetBg }}
+        handleIndicatorStyle={{ backgroundColor: handleColor }}
+      >
+        <View className="px-6 pt-2 pb-4">
+          <Text className="text-lg font-bold mb-1" style={{ color: titleColor }}>
+            Selecciona una tienda
+          </Text>
+          <Text className="text-sm" style={{ color: subtextColor }}>
+            Elige la sucursal desde donde quieres ordenar
+          </Text>
+        </View>
+
+        {branchesLoading ? (
+          <View className="flex-1 items-center justify-center pb-10">
+            <ActivityIndicator size="large" color={COFFEE.accent} />
+          </View>
+        ) : (
+          <BottomSheetFlatList
+            data={branches ?? []}
+            keyExtractor={(item: { _id: string }) => item._id}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32 }}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            renderItem={({ item }: { item: Branch }) => (
+              <TouchableOpacity
+                onPress={() => handleBranchPress(item)}
+                activeOpacity={0.85}
+                style={{
+                  backgroundColor: isDark ? '#27272a' : COFFEE.cream,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: isDark ? '#3f3f46' : COFFEE.tan,
+                }}
+              >
+                <View style={{ height: 3, backgroundColor: COFFEE.accent, borderTopLeftRadius: 16, borderTopRightRadius: 16 }} />
+                <View style={{ padding: 16 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <Text style={{ color: titleColor, fontSize: 15, fontWeight: '700', flex: 1, marginRight: 8 }}>
+                      {item.name}
+                    </Text>
+                    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: COFFEE.accent, alignItems: 'center', justifyContent: 'center' }}>
+                      <ChevronRight size={16} color="#fff" />
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                    <MapPin size={13} color={subtextColor} />
+                    <Text style={{ color: subtextColor, fontSize: 13, marginLeft: 6, flex: 1 }} numberOfLines={1}>
+                      {item.address.street}, {item.address.city}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Phone size={13} color={subtextColor} />
+                    <Text style={{ color: subtextColor, fontSize: 13, marginLeft: 6 }}>
+                      {item.phone}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        )}
+      </BottomSheetModal>
     </SafeAreaView>
   );
 }

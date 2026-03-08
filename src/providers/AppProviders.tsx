@@ -2,6 +2,7 @@ import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { RootNavigator } from '../navigation/RootNavigator';
 import { CartProvider } from '../features/orders/providers/CartProvider';
@@ -25,7 +26,9 @@ export function AppProviders() {
           <RegisterProvider>
             <TenantProvider>
               <CartProvider>
-                <RootNavigator />
+                <BottomSheetModalProvider>
+                  <RootNavigator />
+                </BottomSheetModalProvider>
               </CartProvider>
             </TenantProvider>
           </RegisterProvider>

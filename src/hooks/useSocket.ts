@@ -17,7 +17,7 @@ export function useSocket() {
             return;
         }
 
-        const url = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+        const url = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3001';
 
         socketRef.current = io(url, {
             auth: { token: sessionToken },

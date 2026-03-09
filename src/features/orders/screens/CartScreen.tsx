@@ -23,18 +23,43 @@ import { COFFEE } from '../constants/coffee';
 import { useMutation } from '@tanstack/react-query';
 import { useCart } from '../providers/CartProvider';
 import { createOrder } from '../services/orderService';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type { CartScreenProps } from '../../../navigation/types';
 import type { PaymentMethod } from '../../../shared/types/orders.types';
+
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+const stripeModule = isExpoGo
+  ? null
+  : require('@stripe/stripe-react-native');
+
+const createPaymentIntentFn = isExpoGo
+  ? null
+  : (require('../../stripe/services/stripeService').createPaymentIntent as (
+      amount: number,
+      currency: string,
+      orderId?: string,
+    ) => Promise<{ clientSecret: string }>);
+
+const noopStripe = {
+  initPaymentSheet: async (_opts: any) => ({ error: { message: 'Stripe no disponible en Expo Go' } as any }),
+  presentPaymentSheet: async () => ({ error: { message: 'Stripe no disponible en Expo Go' } as any }),
+};
+
+function useStripeSafe() {
+  if (!stripeModule) return noopStripe;
+  return stripeModule.useStripe();
+}
 
 const PAYMENT_METHODS: {
   value: PaymentMethod;
   label: string;
   icon: React.ReactElement;
 }[] = [
-  { value: 'card', label: 'Tarjeta', icon: <CreditCard size={22} /> },
-  { value: 'cash', label: 'Efectivo', icon: <Banknote size={22} /> },
-  { value: 'wallet', label: 'Wallet', icon: <Smartphone size={22} /> },
-];
+    { value: 'card', label: 'Tarjeta', icon: <CreditCard size={22} /> },
+    { value: 'cash', label: 'Efectivo', icon: <Banknote size={22} /> },
+    { value: 'wallet', label: 'Wallet', icon: <Smartphone size={22} /> },
+  ];
 
 export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
   const { branchId } = route.params;
@@ -43,9 +68,47 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
   const cart = useCart();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
 
+  const { initPaymentSheet, presentPaymentSheet } = useStripeSafe();
+
   const createOrderMutation = useMutation({
     mutationFn: createOrder,
-    onSuccess: (order) => {
+    onSuccess: async (order) => {
+      if (paymentMethod === 'card' && createPaymentIntentFn) {
+        try {
+          const { clientSecret } = await createPaymentIntentFn(cart.subtotal, 'usd', order._id);
+
+          const { error: initError } = await initPaymentSheet({
+            paymentIntentClientSecret: clientSecret,
+            merchantDisplayName: 'BrewHub',
+          });
+
+          if (initError) {
+            showAlert('Error', 'No se pudo iniciar el pago seguro');
+            return;
+          }
+
+          const { error: paymentError } = await presentPaymentSheet();
+
+          if (paymentError) {
+            showAlert(
+              'Pago no completado',
+              'La orden ha sido creada pero el pago no se completó. Podrás intentarlo luego.'
+            );
+            cart.clearCart();
+            navigation.navigate('OrderDetails', { orderId: order._id });
+            return;
+          }
+
+          showAlert('¡Pago exitoso!', `Tu orden #${order.orderNumber} ha sido pagada y confirmada.`);
+          cart.clearCart();
+          navigation.navigate('OrderDetails', { orderId: order._id });
+          return;
+        } catch (err: any) {
+          showAlert('Error de pago', err.message);
+          return;
+        }
+      }
+
       showAlert(
         '¡Orden creada!',
         `Tu orden #${order.orderNumber} ha sido procesada con éxito.`,
@@ -175,11 +238,10 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
                 key={method.value}
                 onPress={() => setPaymentMethod(method.value)}
                 activeOpacity={0.7}
-                className={`flex-row items-center p-4 rounded-2xl border ${
-                  isSelected
+                className={`flex-row items-center p-4 rounded-2xl border ${isSelected
                     ? `border-amber-500 ${isDark ? 'bg-amber-500/10' : 'bg-amber-50'}`
                     : `${isDark ? 'border-zinc-800 bg-zinc-800/50' : 'border-gray-200 bg-gray-50'}`
-                }`}
+                  }`}
               >
                 <View className={`p-2 rounded-full mr-4 ${isSelected ? (isDark ? 'bg-amber-500/20' : 'bg-amber-100') : (isDark ? 'bg-zinc-700' : 'bg-white shadow-sm')}`}>
                   {React.cloneElement(method.icon as React.ReactElement<any>, {
@@ -240,13 +302,13 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
         contentContainerStyle={{ paddingBottom: 100 }}
         renderItem={({ item: cartItem, index }) => (
           <View
-          className="mx-4 mb-4 rounded-3xl p-5 border"
-          style={{
-            backgroundColor: isDark ? '#18181b' : '#fff',
-            borderColor: isDark ? COFFEE.accent : '#e5e7eb',
-          }}
-        >
-            
+            className="mx-4 mb-4 rounded-3xl p-5 border"
+            style={{
+              backgroundColor: isDark ? '#18181b' : '#fff',
+              borderColor: isDark ? COFFEE.accent : '#e5e7eb',
+            }}
+          >
+
             <View className="flex-row justify-between items-start mb-3">
               <View className="flex-1 pr-4">
                 <Text className={`text-lg font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>

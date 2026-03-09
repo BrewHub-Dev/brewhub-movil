@@ -122,7 +122,7 @@ export function OrderDetailsScreen({ navigation, route }: Readonly<OrderDetailsS
         <Text className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'} mb-3`}>Productos</Text>
         {order.items.map((item, index) => (
           <View
-            key={index}
+            key={item.itemId}
             className={`pb-3 mb-3 ${
               index < order.items.length - 1 ? `border-b ${isDark ? 'border-zinc-800' : 'border-gray-100'}` : ''
             }`}
@@ -138,8 +138,8 @@ export function OrderDetailsScreen({ navigation, route }: Readonly<OrderDetailsS
 
             {item.modifiers && item.modifiers.length > 0 && (
               <View className="ml-4 mt-1">
-                {item.modifiers.map((mod, idx) => (
-                  <Text key={idx} className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>
+                {item.modifiers.map((mod) => (
+                  <Text key={mod.name} className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>
                     • {mod.name}: {mod.optionName}
                     {mod.extraPrice > 0 && ` (+$${mod.extraPrice.toFixed(2)})`}
                   </Text>

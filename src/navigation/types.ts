@@ -14,7 +14,6 @@ export type RootStackParamList = {
 
 export type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
 export type RegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'Register'>;
-export type QRScannerScreenProps = NativeStackScreenProps<RootStackParamList, 'QRScanner'>;
 export type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 export type BranchListScreenProps = NativeStackScreenProps<RootStackParamList, 'BranchList'>;
 export type MenuScreenProps = NativeStackScreenProps<RootStackParamList, 'Menu'>;

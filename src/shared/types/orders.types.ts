@@ -11,9 +11,9 @@ export type PaymentStatus = "pending" | "paid" | "refunded";
 export type PaymentMethod = "card" | "cash" | "wallet" | "bank_transfer";
 
 export interface OrderModifier {
-  name: string;
-  optionName: string;
-  extraPrice: number;
+  name?: string;
+  optionName?: string;
+  extraPrice?: number;
 }
 
 export interface OrderItem {

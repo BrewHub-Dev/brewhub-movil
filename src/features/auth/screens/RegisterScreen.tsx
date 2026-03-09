@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,25 +20,49 @@ import { useRegisterForm } from '../context/RegisterContext';
 import { showAlert } from '@/shared/services/alert';
 import { COFFEE } from '../../orders/constants/coffee';
 
+type FormState = {
+  name: string;
+  emailAddress: string;
+  password: string;
+  inviteCode: string;
+  isLoading: boolean;
+};
+
+type FormAction =
+  | { type: 'SET_FIELD'; field: keyof Omit<FormState, 'isLoading'>; value: string }
+  | { type: 'SET_LOADING'; value: boolean };
+
+function formReducer(state: FormState, action: FormAction): FormState {
+  switch (action.type) {
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.value };
+  }
+}
+
 export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenProps>) {
   const { formData, setFormData, clearFormData } = useRegisterForm();
-  const [name, setName] = useState(formData.name);
-  const [emailAddress, setEmailAddress] = useState(formData.emailAddress);
-  const [password, setPassword] = useState(formData.password);
-  const [inviteCode, setInviteCode] = useState(
-    route.params?.inviteCode || formData.inviteCode || ''
-  );
-  const [isLoading, setIsLoading] = useState(false);
+  const [state, dispatch] = useReducer(formReducer, {
+    name: formData.name,
+    emailAddress: formData.emailAddress,
+    password: formData.password,
+    inviteCode: route.params?.inviteCode || formData.inviteCode || '',
+    isLoading: false,
+  });
+  const { name, emailAddress, password, inviteCode, isLoading } = state;
+
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  useEffect(() => {
-    setFormData({ name, emailAddress, password, inviteCode });
-  }, [name, emailAddress, password, inviteCode]);
+  const setField = (field: keyof Omit<FormState, 'isLoading'>, value: string) => {
+    dispatch({ type: 'SET_FIELD', field, value });
+    setFormData({ ...state, [field]: value });
+  };
 
   useEffect(() => {
     if (route.params?.inviteCode) {
-      setInviteCode(route.params.inviteCode);
+      dispatch({ type: 'SET_FIELD', field: 'inviteCode', value: route.params.inviteCode });
     }
   }, [route.params?.inviteCode]);
 
@@ -48,7 +72,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
       return;
     }
 
-    setIsLoading(true);
+    dispatch({ type: 'SET_LOADING', value: true });
     try {
       await registerWithInviteCode({
         name,
@@ -67,7 +91,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
     } catch (error: unknown) {
       showAlert('Error', (error as any)?.message || 'No se pudo completar el registro');
     } finally {
-      setIsLoading(false);
+      dispatch({ type: 'SET_LOADING', value: false });
     }
   };
 
@@ -150,7 +174,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
                   placeholder="Juan Pérez"
                   placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
                   value={name}
-                  onChangeText={setName}
+                  onChangeText={(v) => setField('name', v)}
                   autoCapitalize="words"
                 />
               </View>
@@ -165,7 +189,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
                   placeholder="tu@email.com"
                   placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
                   value={emailAddress}
-                  onChangeText={setEmailAddress}
+                  onChangeText={(v) => setField('emailAddress', v)}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -181,7 +205,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
                   placeholder="••••••••"
                   placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(v) => setField('password', v)}
                   secureTextEntry
                 />
               </View>
@@ -207,7 +231,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
                   placeholder="CAFE-ABC-2024"
                   placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
                   value={inviteCode}
-                  onChangeText={setInviteCode}
+                  onChangeText={(v) => setField('inviteCode', v)}
                   autoCapitalize="characters"
                 />
               </View>

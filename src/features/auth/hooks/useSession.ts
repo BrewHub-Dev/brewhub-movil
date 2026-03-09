@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getSession, saveSession, clearSession, type StoredSession } from '../services/sessionStorage';
 import type { AuthUser } from '../types/auth.types';
 
-export const SESSION_QUERY_KEY = ['session'] as const;
+const SESSION_QUERY_KEY = ['session'] as const;
 
 export function useSession() {
   const { data, isLoading } = useQuery<StoredSession | null>({

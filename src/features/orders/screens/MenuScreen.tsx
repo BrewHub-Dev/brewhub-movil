@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useReducer, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   FlatList,
   ActivityIndicator,
-  Dimensions,
+  useWindowDimensions,
   useColorScheme,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -20,21 +20,58 @@ import { SearchBar } from '../components/SearchBar';
 import { FloatingCart } from '../components/FloatingCart';
 import { DetailModal } from '../components/DetailModal';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_GAP = 12;
 const CARD_PADDING = 20;
-const CARD_WIDTH = (SCREEN_WIDTH - CARD_PADDING * 2 - CARD_GAP) / 2;
+
+type MenuState = {
+  selectedItem: Item | null;
+  selectedModifiers: Record<string, string>;
+  quantity: number;
+  selectedCategory: string | null;
+  searchText: string;
+};
+
+type MenuAction =
+  | { type: 'SELECT_ITEM'; item: Item }
+  | { type: 'SET_MODIFIER'; modifierName: string; optionName: string }
+  | { type: 'SET_QUANTITY'; quantity: number }
+  | { type: 'SET_CATEGORY'; category: string | null }
+  | { type: 'SET_SEARCH'; text: string }
+  | { type: 'CLEAR_SELECTION' };
+
+function menuReducer(state: MenuState, action: MenuAction): MenuState {
+  switch (action.type) {
+    case 'SELECT_ITEM':
+      return { ...state, selectedItem: action.item, selectedModifiers: {}, quantity: 1 };
+    case 'SET_MODIFIER':
+      return { ...state, selectedModifiers: { ...state.selectedModifiers, [action.modifierName]: action.optionName } };
+    case 'SET_QUANTITY':
+      return { ...state, quantity: action.quantity };
+    case 'SET_CATEGORY':
+      return { ...state, selectedCategory: action.category };
+    case 'SET_SEARCH':
+      return { ...state, searchText: action.text };
+    case 'CLEAR_SELECTION':
+      return { ...state, selectedItem: null, selectedModifiers: {}, quantity: 1 };
+  }
+}
 
 export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
   const { branchId } = route.params;
+  const { width: screenWidth } = useWindowDimensions();
+  const CARD_WIDTH = (screenWidth - CARD_PADDING * 2 - CARD_GAP) / 2;
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const [selectedModifiers, setSelectedModifiers] = useState<Record<string, string>>({});
-  const [quantity, setQuantity] = useState(1);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchText, setSearchText] = useState('');
+  const [state, dispatch] = useReducer(menuReducer, {
+    selectedItem: null,
+    selectedModifiers: {},
+    quantity: 1,
+    selectedCategory: null,
+    searchText: '',
+  });
+
+  const { selectedItem, selectedModifiers, quantity, selectedCategory, searchText } = state;
   const cart = useCart();
 
   const { data: branch } = useQuery({
@@ -64,11 +101,11 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
 
   useEffect(() => {
     if (categories.length > 0 && !selectedCategory) {
-      setSelectedCategory(categories[0]);
+      dispatch({ type: 'SET_CATEGORY', category: categories[0] });
     }
   }, [categories.length]);
 
-  const getDisplayedItems = useCallback(() => {
+  const displayedItems = useCallback(() => {
     let pool = selectedCategory ? groupedByCategory[selectedCategory] ?? [] : activeItems;
     if (searchText.trim()) {
       const q = searchText.toLowerCase();
@@ -79,20 +116,12 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
       );
     }
     return pool;
-  }, [selectedCategory, searchText, activeItems, groupedByCategory]);
+  }, [selectedCategory, searchText, activeItems, groupedByCategory])();
 
-  const displayedItems = getDisplayedItems();
-
-  const handleSelectModifier = (modifierName: string, optionName: string) => {
-    setSelectedModifiers((prev) => ({ ...prev, [modifierName]: optionName }));
-  };
-
-  const handleItemPress = (item: Item) => {
+  const handleItemPress = useCallback((item: Item) => {
     if (!item.active) return;
-    setSelectedItem(item);
-    setSelectedModifiers({});
-    setQuantity(1);
-  };
+    dispatch({ type: 'SELECT_ITEM', item });
+  }, []);
 
   const handleAddToCart = () => {
     if (!selectedItem) return;
@@ -101,9 +130,7 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
       optionName,
     }));
     cart.addToCart(selectedItem, quantity, modifiers);
-    setSelectedItem(null);
-    setSelectedModifiers({});
-    setQuantity(1);
+    dispatch({ type: 'CLEAR_SELECTION' });
   };
 
   const getModalTotal = () => {
@@ -116,10 +143,14 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
     return (selectedItem.price + extras) * quantity;
   };
 
+  const renderItem = useCallback(({ item }: { item: Item }) => (
+    <ProductCard item={item} isDark={isDark} cardWidth={CARD_WIDTH} onPress={handleItemPress} />
+  ), [isDark, CARD_WIDTH, handleItemPress]);
+
   if (isLoading) {
     return (
       <View
-        className={`flex-1 justify-center items-center`}
+        className="flex-1 justify-center items-center"
         style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}
       >
         <ActivityIndicator size="large" color={COFFEE.mocha} />
@@ -148,12 +179,12 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
         searchText={searchText}
         categories={categories}
         onChangeSearchText={(t) => {
-          setSearchText(t);
-          if (t.trim()) setSelectedCategory(null);
+          dispatch({ type: 'SET_SEARCH', text: t });
+          if (t.trim()) dispatch({ type: 'SET_CATEGORY', category: null });
         }}
         onClearSearch={() => {
-          setSearchText('');
-          if (categories.length > 0) setSelectedCategory(categories[0]);
+          dispatch({ type: 'SET_SEARCH', text: '' });
+          if (categories.length > 0) dispatch({ type: 'SET_CATEGORY', category: categories[0] });
         }}
       />
 
@@ -162,7 +193,7 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
         selectedCategory={selectedCategory}
         isDark={isDark}
         searchText={searchText}
-        onSelectCategory={setSelectedCategory}
+        onSelectCategory={(cat) => dispatch({ type: 'SET_CATEGORY', category: cat })}
       />
 
       <FlatList
@@ -171,7 +202,7 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
         numColumns={2}
         columnWrapperStyle={{ gap: CARD_GAP, paddingHorizontal: CARD_PADDING }}
         contentContainerStyle={{ paddingTop: 10, paddingBottom: 130 }}
-        renderItem={({ item }) => <ProductCard item={item} isDark={isDark} cardWidth={CARD_WIDTH} onPress={handleItemPress} />}
+        renderItem={renderItem}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View className="items-center justify-center py-20">
@@ -201,9 +232,13 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
         selectedModifiers={selectedModifiers}
         quantity={quantity}
         isDark={isDark}
-        onClose={() => setSelectedItem(null)}
-        onSelectModifier={handleSelectModifier}
-        onChangeQuantity={(delta) => setQuantity(q => Math.max(1, q + delta))}
+        onClose={() => dispatch({ type: 'CLEAR_SELECTION' })}
+        onSelectModifier={(modifierName, optionName) =>
+          dispatch({ type: 'SET_MODIFIER', modifierName, optionName })
+        }
+        onChangeQuantity={(delta) =>
+          dispatch({ type: 'SET_QUANTITY', quantity: Math.max(1, quantity + delta) })
+        }
         onAddToCart={handleAddToCart}
         getModalTotal={getModalTotal}
       />

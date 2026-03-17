@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from 'react';
+import React, { useReducer } from 'react';
 import {
   View,
   Text,
@@ -13,18 +13,24 @@ import {
   useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { QrCode } from 'lucide-react-native';
+import Constants from 'expo-constants';
 import type { RegisterScreenProps } from '../../../navigation/types';
-import { registerWithInviteCode } from '../services/authService';
+import { registerUser } from '../services/authService';
 import { useRegisterForm } from '../context/RegisterContext';
+import { useTenant } from '@/features/tenant/providers/TenantProvider';
 import { showAlert } from '@/shared/services/alert';
 import { COFFEE } from '../../orders/constants/coffee';
+
+const tenantId = Constants.expoConfig?.extra?.brand?.tenantId as string;
+const brandName =
+  (Constants.expoConfig?.extra?.brand?.shopName as string) ||
+  (Constants.expoConfig?.extra?.brand?.appName as string) ||
+  'BrewHub';
 
 type FormState = {
   name: string;
   emailAddress: string;
   password: string;
-  inviteCode: string;
   isLoading: boolean;
 };
 
@@ -41,16 +47,16 @@ function formReducer(state: FormState, action: FormAction): FormState {
   }
 }
 
-export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenProps>) {
+export function RegisterScreen({ navigation }: Readonly<RegisterScreenProps>) {
+  const { tenant } = useTenant();
   const { formData, setFormData, clearFormData } = useRegisterForm();
   const [state, dispatch] = useReducer(formReducer, {
     name: formData.name,
     emailAddress: formData.emailAddress,
     password: formData.password,
-    inviteCode: route.params?.inviteCode || formData.inviteCode || '',
     isLoading: false,
   });
-  const { name, emailAddress, password, inviteCode, isLoading } = state;
+  const { name, emailAddress, password, isLoading } = state;
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -60,25 +66,19 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
     setFormData({ ...state, [field]: value });
   };
 
-  useEffect(() => {
-    if (route.params?.inviteCode) {
-      dispatch({ type: 'SET_FIELD', field: 'inviteCode', value: route.params.inviteCode });
-    }
-  }, [route.params?.inviteCode]);
-
   const handleRegister = async () => {
-    if (!name.trim() || !emailAddress.trim() || !password.trim() || !inviteCode.trim()) {
+    if (!name.trim() || !emailAddress.trim() || !password.trim()) {
       showAlert('Error', 'Por favor completa todos los campos');
       return;
     }
 
     dispatch({ type: 'SET_LOADING', value: true });
     try {
-      await registerWithInviteCode({
+      await registerUser({
         name,
         emailAddress,
         password,
-        inviteCode,
+        tenantId,
       });
 
       clearFormData();
@@ -123,18 +123,26 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
         >
           <View className="flex-1 items-center justify-center px-6 py-12">
             <View className="items-center mb-10">
-              <View className="w-24 h-24 rounded-3xl items-center justify-center mb-5 shadow-2xl"
+              <View className="w-24 h-24 rounded-3xl items-center justify-center mb-5 shadow-2xl overflow-hidden"
                 style={{ backgroundColor: COFFEE.accent }}>
-                <Image
-                  source={require('@assets/Subject.png')}
-                  style={{ width: 48, height: 48 }}
-                />
+                {tenant?.shopLogo ? (
+                  <Image
+                    source={{ uri: tenant.shopLogo }}
+                    style={{ width: 96, height: 96 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Image
+                    source={require('@assets/Subject.png')}
+                    style={{ width: 48, height: 48 }}
+                  />
+                )}
               </View>
               <Text
                 className="text-4xl font-bold tracking-tight"
                 style={{ color: isDark ? '#fafaf9' : COFFEE.darkRoast }}
               >
-                Brewsy
+                {tenant?.shopName ?? brandName}
               </Text>
               <Text
                 className="text-base mt-2"
@@ -195,7 +203,7 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
                 />
               </View>
 
-              <View className="mb-4">
+              <View className="mb-6">
                 <Text className="text-sm font-medium mb-2" style={{ color: labelColor }}>
                   Contraseña
                 </Text>
@@ -207,32 +215,6 @@ export function RegisterScreen({ navigation, route }: Readonly<RegisterScreenPro
                   value={password}
                   onChangeText={(v) => setField('password', v)}
                   secureTextEntry
-                />
-              </View>
-
-              <View className="mb-6">
-                <View className="flex-row justify-between items-center mb-2">
-                  <Text className="text-sm font-medium" style={{ color: labelColor }}>
-                    Código de invitación
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('QRScanner', { fromRegister: true })}
-                    className="flex-row items-center"
-                  >
-                    <QrCode size={16} color={COFFEE.accent} />
-                    <Text className="text-sm font-medium ml-1" style={{ color: COFFEE.accent }}>
-                      Escanear QR
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <TextInput
-                  className="rounded-xl px-4 py-3"
-                  style={{ backgroundColor: inputBg, borderWidth: 1, borderColor: inputBorder, color: inputText }}
-                  placeholder="CAFE-ABC-2024"
-                  placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
-                  value={inviteCode}
-                  onChangeText={(v) => setField('inviteCode', v)}
-                  autoCapitalize="characters"
                 />
               </View>
 

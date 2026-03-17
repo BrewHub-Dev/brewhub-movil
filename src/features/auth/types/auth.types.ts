@@ -9,8 +9,17 @@ export interface AuthUser {
   name: string;
 }
 
+export interface TenantInfo {
+  tenantId: string;
+  shopName: string;
+  shopLogo?: string | null;
+  branchId?: string | null;
+}
+
 export interface LoginResponse {
   ok: boolean;
   user: AuthUser;
   token: string;
+  refreshToken?: string;
+  tenant: TenantInfo | null;
 }

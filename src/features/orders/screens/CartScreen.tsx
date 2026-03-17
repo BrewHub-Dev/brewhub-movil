@@ -182,7 +182,7 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
 
           const { error: initError } = await initPaymentSheet({
             paymentIntentClientSecret: clientSecret,
-            merchantDisplayName: 'BrewHub',
+            merchantDisplayName: (Constants.expoConfig?.extra?.brand?.shopName as string) || 'BrewHub',
           });
 
           if (initError) {

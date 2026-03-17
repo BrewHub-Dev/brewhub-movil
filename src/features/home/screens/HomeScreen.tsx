@@ -16,6 +16,7 @@ import { useLogout } from '@/features/auth/hooks/useLogout';
 import { getCountDashboard } from '../services/homeService';
 import { useTenant } from '@/features/tenant/providers/TenantProvider';
 import { getBranchesByShopId } from '@/features/orders/services/branchService';
+import Constants from 'expo-constants';
 import { useQuery } from '@tanstack/react-query';
 import type { HomeScreenProps } from '@/navigation/types';
 import type { Branch } from '@/shared/types/branches.types';
@@ -129,7 +130,7 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
             className="text-3xl font-bold leading-tight mb-6"
             style={{ color: titleColor }}
           >
-            Encuentra el mejor{'\n'}café para ti
+            {tenant?.shopName ?? ((Constants.expoConfig?.extra?.brand?.shopName as string) || 'BrewHub')}
           </Text>
 
           <TouchableOpacity

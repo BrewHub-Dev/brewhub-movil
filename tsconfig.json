@@ -16,6 +16,8 @@
     "src/**/*.tsx",
     "src/expo-env.d.ts",
     "src/nativewind-env.d.ts",
-    "nativewind-env.d.ts"
+    "nativewind-env.d.ts",
+    "app.config.ts",
+    "brands/**/*.ts"
   ]
 }

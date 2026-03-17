@@ -123,9 +123,8 @@ export function OrderDetailsScreen({ navigation, route }: Readonly<OrderDetailsS
         {order.items.map((item, index) => (
           <View
             key={item.itemId}
-            className={`pb-3 mb-3 ${
-              index < order.items.length - 1 ? `border-b ${isDark ? 'border-zinc-800' : 'border-gray-100'}` : ''
-            }`}
+            className={`pb-3 mb-3 ${index < order.items.length - 1 ? `border-b ${isDark ? 'border-zinc-800' : 'border-gray-100'}` : ''
+              }`}
           >
             <View className="flex-row justify-between items-start mb-1">
               <Text className={`${isDark ? 'text-white' : 'text-gray-800'} font-medium flex-1`}>
@@ -141,7 +140,7 @@ export function OrderDetailsScreen({ navigation, route }: Readonly<OrderDetailsS
                 {item.modifiers.map((mod) => (
                   <Text key={mod.name} className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>
                     • {mod.name}: {mod.optionName}
-                    {mod.extraPrice > 0 && ` (+$${mod.extraPrice.toFixed(2)})`}
+                    {(mod.extraPrice ?? 0) > 0 && ` (+$${(mod.extraPrice ?? 0).toFixed(2)})`}
                   </Text>
                 ))}
               </View>
@@ -209,11 +208,10 @@ export function OrderDetailsScreen({ navigation, route }: Readonly<OrderDetailsS
           <View className="flex-row justify-between mt-2">
             <Text className={isDark ? 'text-zinc-400' : 'text-gray-600'}>Estado</Text>
             <Text
-              className={`font-semibold ${
-                order.paymentStatus === 'paid'
+              className={`font-semibold ${order.paymentStatus === 'paid'
                   ? `${isDark ? 'text-green-500' : 'text-green-600'}`
                   : `${isDark ? 'text-yellow-500' : 'text-yellow-600'}`
-              }`}
+                }`}
             >
               {order.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente'}
             </Text>

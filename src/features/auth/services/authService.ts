@@ -33,3 +33,23 @@ export async function registerWithInviteCode(data: RegisterData): Promise<void> 
     throw new Error('No se pudo completar el registro. Verifica el código de invitación.');
   }
 }
+
+export interface RegisterDirectData {
+  name: string;
+  emailAddress: string;
+  password: string;
+  tenantId: string;
+}
+
+export async function registerUser(data: RegisterDirectData): Promise<void> {
+  try {
+    const response = await axios.post(`${API_URL}/auth/register-direct`, data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Register direct error:', error);
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    }
+    throw new Error('No se pudo completar el registro.');
+  }
+}

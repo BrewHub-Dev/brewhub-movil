@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import Constants from 'expo-constants';
+import axios from 'axios';
 import { getTenantContext, saveTenantContext, clearTenantContext } from '../services/tenantStorage';
 import type { TenantContext } from '../types/tenant.types';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.11.115:3001';
 
 interface TenantContextType {
   tenant: TenantContext | null;
@@ -23,10 +27,47 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     loadTenant();
   }, []);
 
+  const fetchBranding = async (tenantId: string): Promise<{ name: string; image: string | null } | null> => {
+    try {
+      const { data } = await axios.get(`${API_URL}/shops/${tenantId}/branding`);
+      return data;
+    } catch (error) {
+      console.error('Error fetching shop branding:', error);
+      return null;
+    }
+  };
+
   const loadTenant = async () => {
     try {
       const savedTenant = await getTenantContext();
-      setTenantState(savedTenant);
+
+      if (savedTenant) {
+        setTenantState(savedTenant);
+
+        if (!savedTenant.shopLogo) {
+          const branding = await fetchBranding(savedTenant.tenantId);
+          if (branding?.image) {
+            const updated = { ...savedTenant, shopName: branding.name, shopLogo: branding.image };
+            await saveTenantContext(updated);
+            setTenantState(updated);
+          }
+        }
+      } else {
+        const brandTenantId = Constants.expoConfig?.extra?.brand?.tenantId as string | null;
+        const brandShopName = Constants.expoConfig?.extra?.brand?.shopName as string | undefined;
+        const brandAppName = Constants.expoConfig?.extra?.brand?.appName as string | undefined;
+
+        if (brandTenantId) {
+          const branding = await fetchBranding(brandTenantId);
+          const autoTenant: TenantContext = {
+            tenantId: brandTenantId,
+            shopName: branding?.name ?? brandShopName ?? brandAppName ?? 'BrewHub',
+            shopLogo: branding?.image ?? undefined,
+          };
+          await saveTenantContext(autoTenant);
+          setTenantState(autoTenant);
+        }
+      }
     } catch (error) {
       console.error('Error loading tenant:', error);
     } finally {

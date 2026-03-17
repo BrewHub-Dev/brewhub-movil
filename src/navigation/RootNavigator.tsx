@@ -2,10 +2,10 @@ import React from 'react';
 import { View, ActivityIndicator, Platform, useColorScheme } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Constants from 'expo-constants';
 
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
 import { RegisterScreen } from '../features/auth/screens/RegisterScreen';
-import { QRScannerScreen } from '../features/tenant/screens/QRScannerScreen';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { BranchListScreen } from '../features/orders/screens/BranchListScreen';
 import { MenuScreen } from '../features/orders/screens/MenuScreen';
@@ -19,13 +19,15 @@ import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const scheme = Constants.expoConfig?.scheme ?? 'brewhub';
+const appName = Constants.expoConfig?.extra?.brand?.appName ?? 'BrewHub';
+
 const linking = {
-  prefixes: ['brewhub://', 'http://localhost:8081'],
+  prefixes: [`${scheme}://`, 'http://localhost:8081'],
   config: {
     screens: {
       Login: 'login',
       Register: 'register',
-      QRScanner: 'qr-scanner',
       Home: 'home',
       BranchList: 'branches',
       Menu: 'menu/:branchId',
@@ -62,16 +64,13 @@ const CustomLightTheme = {
 
 export function RootNavigator() {
   const { isAuthenticated, isLoading } = useSession();
-  const { tenant, isLoading: isTenantLoading } = useTenant();
+  const { isLoading: isTenantLoading } = useTenant();
   usePushNotifications(isAuthenticated);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const hasTenant = !!tenant?.tenantId;
-
   const getInitialRoute = (): keyof RootStackParamList => {
     if (!isAuthenticated) return 'Login';
-    if (!hasTenant) return 'QRScanner';
     return 'Home';
   };
 
@@ -92,7 +91,7 @@ export function RootNavigator() {
     <NavigationContainer
       theme={isDark ? CustomDarkTheme : CustomLightTheme}
       linking={Platform.OS === 'web' ? linking : undefined}
-      documentTitle={{ formatter: () => 'BrewHub' }}
+      documentTitle={{ formatter: () => appName }}
     >
       <Stack.Navigator
         initialRouteName={getInitialRoute()}
@@ -110,7 +109,6 @@ export function RootNavigator() {
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="QRScanner" component={QRScannerScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen
           name="BranchList"

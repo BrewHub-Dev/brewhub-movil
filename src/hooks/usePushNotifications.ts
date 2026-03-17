@@ -37,7 +37,6 @@ export function usePushNotifications(isAuthenticated: boolean) {
             })
             .catch((err: any) => console.error('[Push Hook] Registration error:', err));
 
-        // Ensure token is passed if needed according to previous log, but since these are listeners, no args are needed if we just track subscriptions
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
             setNotification(notification);
         });

@@ -5,7 +5,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Input } from '../../../shared/components/ui/Input';
 import { Button } from '../../../shared/components/ui/Button';
 import { useLogin } from '../hooks/useLogin';
-import { useTenant } from '@/features/tenant/providers/TenantProvider';
 import type { RootStackParamList } from '../../../navigation/types';
 
 interface LoginFormProps {
@@ -16,7 +15,6 @@ export function LoginForm({ navigation }: Readonly<LoginFormProps>) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { mutate: login, isPending, error } = useLogin();
-  const { tenant } = useTenant();
 
   function handleSubmit() {
     if (!email.trim() || !password) return;
@@ -24,11 +22,7 @@ export function LoginForm({ navigation }: Readonly<LoginFormProps>) {
       { emailAddress: email.trim(), password },
       {
         onSuccess: () => {
-          if (tenant?.tenantId) {
-            navigation.replace('Home');
-          } else {
-            navigation.replace('QRScanner');
-          }
+          navigation.replace('Home');
         },
       },
     );

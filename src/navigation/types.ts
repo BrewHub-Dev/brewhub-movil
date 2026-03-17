@@ -2,8 +2,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
   Login: undefined;
-  Register: { inviteCode?: string } | undefined;
-  QRScanner: { fromRegister?: boolean } | undefined;
+  Register: undefined;
   Home: undefined;
   BranchList: undefined;
   Menu: { branchId: string; branchName: string };

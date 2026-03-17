@@ -6,13 +6,34 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "BRAND": "brewhub"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "BRAND": "brewhub"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "BRAND": "brewhub"
+      }
+    },
+    "preview:cafe-los-alpes": {
+      "extends": "preview",
+      "env": {
+        "BRAND": "cafe-los-alpes"
+      }
+    },
+    "production:cafe-los-alpes": {
+      "extends": "production",
+      "env": {
+        "BRAND": "cafe-los-alpes"
+      }
     }
   },
   "submit": {

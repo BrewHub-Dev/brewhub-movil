@@ -11,14 +11,22 @@ import {
   useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Constants from 'expo-constants';
 
 import { LoginForm } from '../components/LoginForm';
 import { COFFEE } from '../../orders/constants/coffee';
+import { useTenant } from '@/features/tenant/providers/TenantProvider';
 import type { LoginScreenProps } from '../../../navigation/types';
+
+const brandName =
+  (Constants.expoConfig?.extra?.brand?.shopName as string) ||
+  (Constants.expoConfig?.extra?.brand?.appName as string) ||
+  'BrewHub';
 
 export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { tenant } = useTenant();
 
   return (
     <SafeAreaView
@@ -43,18 +51,26 @@ export function LoginScreen({ navigation }: Readonly<LoginScreenProps>) {
           <View className="flex-1 items-center justify-center px-6 py-12">
 
             <View className="items-center mb-10">
-              <View className="w-24 h-24 rounded-3xl items-center justify-center mb-5 shadow-2xl"
+              <View className="w-24 h-24 rounded-3xl items-center justify-center mb-5 shadow-2xl overflow-hidden"
                 style={{ backgroundColor: COFFEE.accent }}>
-              <Image
-                source={require('@assets/Subject.png')}
-                style={{ width: 48, height: 48 }}
-              />
+              {tenant?.shopLogo ? (
+                <Image
+                  source={{ uri: tenant.shopLogo }}
+                  style={{ width: 96, height: 96 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Image
+                  source={require('@assets/Subject.png')}
+                  style={{ width: 48, height: 48 }}
+                />
+              )}
               </View>
               <Text
                 className="text-4xl font-bold tracking-tight"
                 style={{ color: isDark ? '#fafaf9' : COFFEE.darkRoast }}
               >
-                Brewsy
+                {tenant?.shopName ?? brandName}
               </Text>
               <Text
                 className="text-base mt-2"

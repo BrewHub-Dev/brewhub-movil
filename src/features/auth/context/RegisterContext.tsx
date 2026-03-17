@@ -4,7 +4,6 @@ interface RegisterFormData {
   name: string;
   emailAddress: string;
   password: string;
-  inviteCode: string;
 }
 
 interface RegisterContextType {
@@ -22,7 +21,6 @@ export const RegisterProvider: React.FC<{ children: React.ReactNode }> = ({
     name: '',
     emailAddress: '',
     password: '',
-    inviteCode: '',
   });
 
   const setFormData = (data: Partial<RegisterFormData>) => {
@@ -34,7 +32,6 @@ export const RegisterProvider: React.FC<{ children: React.ReactNode }> = ({
       name: '',
       emailAddress: '',
       password: '',
-      inviteCode: '',
     });
   };
 

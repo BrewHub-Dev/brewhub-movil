@@ -30,7 +30,6 @@ export function usePushNotifications(isAuthenticated: boolean) {
             .then(token => {
                 if (token) {
                     setExpoPushToken(token);
-                    // Send token to backend
                     apiClient.post('/users/push-token', { pushToken: token })
                         .catch((err: any) => console.error('[Push Hook] Error saving push token:', err));
                 }

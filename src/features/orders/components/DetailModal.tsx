@@ -273,8 +273,6 @@ function AddToCartBar({ isDark, colors, total, onAddToCart }: Readonly<AddToCart
   );
 }
 
-// ─── DetailModal ──────────────────────────────────────────────────────────────
-
 type DetailModalProps = {
   selectedItem: Item | null;
   selectedModifiers: Record<string, string>;

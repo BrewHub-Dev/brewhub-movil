@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy } from 'react';
 import {
   View,
   Text,
@@ -182,7 +182,7 @@ export const QRScannerScreen = () => {
     );
   }
 
-  const NativeCameraScanner = React.lazy(() =>
+  const NativeCameraScanner = lazy(() =>
     import('../components/NativeCameraScanner').then((mod) => ({ default: mod.NativeCameraScanner }))
   );
 

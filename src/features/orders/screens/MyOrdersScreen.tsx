@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
   useColorScheme,
 } from 'react-native';
 import { ShoppingBag } from 'lucide-react-native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../../auth/hooks/useSession';
 import { useSocket } from '../../../hooks/useSocket';
@@ -26,8 +26,9 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   cancelled: { label: 'Cancelada', color: 'text-red-500' },
 };
 
-function OrderCard({ order, onPress }: Readonly<{ order: Order; onPress: () => void }>) {
-  const isDark = useColorScheme() === 'dark';
+const LIMIT = 10;
+
+function OrderCard({ order, onPress, isDark }: Readonly<{ order: Order; onPress: () => void; isDark: boolean }>) {
   const status = STATUS_LABELS[order.status] ?? STATUS_LABELS.pending;
   const date = new Date(order.createdAt).toLocaleDateString('es-MX', {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -64,36 +65,139 @@ function OrderCard({ order, onPress }: Readonly<{ order: Order; onPress: () => v
   );
 }
 
+type ListItem =
+  | { type: 'header'; title: string }
+  | { type: 'order'; order: Order }
+  | { type: 'loadMore' }
+  | { type: 'empty' };
+
 export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
   const isDark = useColorScheme() === 'dark';
   const { user } = useSession();
-  const queryClient = useQueryClient();
   const { socket } = useSocket();
 
-  const { data: orders, isLoading, error, refetch, isRefetching } = useQuery({
+  const [historyPage, setHistoryPage] = useState(1);
+  const [allHistory, setAllHistory] = useState<Order[]>([]);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const { data, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['my-orders', user?._id],
-    queryFn: () => getMyOrders(user!._id),
+    queryFn: async () => {
+      const result = await getMyOrders(user!._id, 1, LIMIT);
+      const completed = result.data.filter((o) => ['completed', 'cancelled'].includes(o.status));
+      setAllHistory(completed);
+      setHasMoreHistory(result.pagination.hasNext);
+      setHistoryPage(1);
+      return result;
+    },
     enabled: !!user?._id,
-    refetchInterval: 60_000,
+    staleTime: 30_000,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!socket) return;
-
-    const handleOrderUpdate = (data: any) => {
-      console.log('[MyOrders] order:updated received:', data);
-      refetch();
-    };
-
+    const handleOrderUpdate = () => { refetch(); };
     socket.on('order:updated', handleOrderUpdate);
-
-    return () => {
-      socket.off('order:updated', handleOrderUpdate);
-    };
+    return () => { socket.off('order:updated', handleOrderUpdate); };
   }, [socket, refetch]);
 
-  const pending = orders?.filter((o) => !['completed', 'cancelled'].includes(o.status)) ?? [];
-  const history = orders?.filter((o) => ['completed', 'cancelled'].includes(o.status)) ?? [];
+  const loadMoreHistory = useCallback(async () => {
+    if (!user?._id || loadingMore || !hasMoreHistory) return;
+    setLoadingMore(true);
+    try {
+      const next = await getMyOrders(user._id, historyPage + 1, LIMIT);
+      const completed = next.data.filter((o) => ['completed', 'cancelled'].includes(o.status));
+      setAllHistory((prev) => [...prev, ...completed]);
+      setHasMoreHistory(next.pagination.hasNext);
+      setHistoryPage((prev) => prev + 1);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [user?._id, historyPage, hasMoreHistory, loadingMore]);
+
+  const activeOrders = data?.data.filter((o) => !['completed', 'cancelled'].includes(o.status)) ?? [];
+
+  const listItems: ListItem[] = [];
+
+  if (activeOrders.length > 0) {
+    listItems.push({ type: 'header', title: 'Activas' });
+    activeOrders.forEach((order) => listItems.push({ type: 'order', order }));
+  }
+
+  if (allHistory.length > 0) {
+    listItems.push({ type: 'header', title: 'Historial' });
+    allHistory.forEach((order) => listItems.push({ type: 'order', order }));
+    if (hasMoreHistory) {
+      listItems.push({ type: 'loadMore' });
+    }
+  }
+
+  if (listItems.length === 0 && !isLoading) {
+    listItems.push({ type: 'empty' });
+  }
+
+  const renderItem = ({ item }: { item: ListItem }) => {
+    if (item.type === 'header') {
+      return (
+        <Text className={`text-xs font-semibold uppercase tracking-widest mb-3 mt-2 ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+          {item.title}
+        </Text>
+      );
+    }
+
+    if (item.type === 'order') {
+      return (
+        <OrderCard
+          order={item.order}
+          isDark={isDark}
+          onPress={() => navigation.navigate('OrderDetails', { orderId: item.order._id })}
+        />
+      );
+    }
+
+    if (item.type === 'loadMore') {
+      return (
+        <TouchableOpacity
+          onPress={loadMoreHistory}
+          disabled={loadingMore}
+          activeOpacity={0.7}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: isDark ? '#3f3f46' : '#e5e7eb',
+            backgroundColor: isDark ? '#18181b' : '#f9fafb',
+            marginBottom: 12,
+          }}
+        >
+          {loadingMore ? (
+            <ActivityIndicator size="small" color="#f59e0b" />
+          ) : (
+            <Text style={{ color: isDark ? '#a1a1aa' : '#6b7280', fontWeight: '600', fontSize: 14 }}>
+              Cargar más historial
+            </Text>
+          )}
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <View className="flex-1 justify-center items-center py-20">
+        <ShoppingBag color={isDark ? '#52525b' : '#9ca3af'} size={48} style={{ marginBottom: 16 }} />
+        <Text className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+          Sin órdenes aún
+        </Text>
+        <Text className={`text-sm text-center ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
+          Realiza tu primera orden desde la pantalla principal
+        </Text>
+      </View>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -119,52 +223,19 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
 
   return (
     <SafeAreaView className={`flex-1 ${isDark ? 'bg-zinc-950' : 'bg-gray-50'}`} edges={['bottom']}>
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#f59e0b" />}
-        contentContainerStyle={{ padding: 16 }}
-      >
-        {pending.length > 0 && (
-          <>
-            <Text className={`text-xs font-semibold uppercase tracking-widest mb-3 ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
-              Activas
-            </Text>
-            {pending.map((order) => (
-              <OrderCard
-                key={order._id}
-                order={order}
-                onPress={() => navigation.navigate('OrderDetails', { orderId: order._id })}
-              />
-            ))}
-          </>
-        )}
-
-        {history.length > 0 && (
-          <>
-            <Text className={`text-xs font-semibold uppercase tracking-widest mb-3 mt-2 ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
-              Historial
-            </Text>
-            {history.map((order) => (
-              <OrderCard
-                key={order._id}
-                order={order}
-                onPress={() => navigation.navigate('OrderDetails', { orderId: order._id })}
-              />
-            ))}
-          </>
-        )}
-
-        {!orders?.length && (
-          <View className="flex-1 justify-center items-center py-20">
-            <ShoppingBag className={`text-5xl mb-4 ${isDark ? 'text-zinc-500' : 'text-gray-400'}`} />
-            <Text className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-              Sin órdenes aún
-            </Text>
-            <Text className={`text-sm text-center ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
-              Realiza tu primera orden desde la pantalla principal
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+      <FlatList
+        data={listItems}
+        keyExtractor={(item, index) => {
+          if (item.type === 'order') return item.order._id;
+          return `${item.type}-${index}`;
+        }}
+        renderItem={renderItem}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#f59e0b" />
+        }
+        contentContainerStyle={{ padding: 16, flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 }

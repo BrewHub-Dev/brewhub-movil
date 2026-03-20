@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useMemo } from 'react';
+import React, { useRef, useCallback, useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -43,13 +43,13 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
     enabled: !!tenant?.tenantId,
   });
 
-  const [dashboardCounts, setDashboardCounts] = React.useState<{
+  const [dashboardCounts, setDashboardCounts] = useState<{
     total: number;
     inProduction: number;
     completed: number;
   }>({ total: 0, inProduction: 0, completed: 0 });
 
-  React.useEffect(() => {
+  useEffect(() => {
     async function fetchDashboardCounts() {
       if (user?._id) {
         const counts = await getCountDashboard(user._id);

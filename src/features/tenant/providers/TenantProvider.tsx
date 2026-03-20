@@ -4,7 +4,7 @@ import axios from 'axios';
 import { getTenantContext, saveTenantContext, clearTenantContext } from '../services/tenantStorage';
 import type { TenantContext } from '../types/tenant.types';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.11.115:3001';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
 interface TenantContextType {
   tenant: TenantContext | null;

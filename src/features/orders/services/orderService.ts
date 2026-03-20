@@ -1,6 +1,20 @@
 import { apiClient } from '../../../shared/services/apiClient';
 import type { CreateOrderInput, Order } from '../../../shared/types/orders.types';
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface PaginatedOrders {
+  data: Order[];
+  pagination: PaginationMeta;
+}
+
 export async function createOrder(orderData: CreateOrderInput): Promise<Order> {
   try {
     const response = await apiClient.post('/orders/app', orderData);
@@ -12,9 +26,9 @@ export async function createOrder(orderData: CreateOrderInput): Promise<Order> {
   }
 }
 
-export async function getMyOrders(userId: string): Promise<Order[]> {
+export async function getMyOrders(userId: string, page = 1, limit = 20): Promise<PaginatedOrders> {
   try {
-    const response = await apiClient.get(`/orders/user/${userId}`);
+    const response = await apiClient.get(`/orders/user/${userId}?page=${page}&limit=${limit}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching orders:', error);

@@ -4,6 +4,7 @@ import {
   Text,
   FlatList,
   ActivityIndicator,
+  RefreshControl,
   useWindowDimensions,
   useColorScheme,
 } from 'react-native';
@@ -79,7 +80,7 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
     queryFn: () => getBranchById(branchId),
   });
 
-  const { data: items, isLoading, error } = useQuery({
+  const { data: items, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['items', branch?.ShopId],
     queryFn: () => getItemsByShopId(branch!.ShopId),
     enabled: !!branch?.ShopId,
@@ -204,6 +205,14 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
         contentContainerStyle={{ paddingTop: 10, paddingBottom: 130 }}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={COFFEE.mocha}
+            colors={[COFFEE.mocha]}
+          />
+        }
         ListEmptyComponent={
           <View className="items-center justify-center py-20">
             <Text style={{ fontSize: 44, marginBottom: 12 }}>☕</Text>

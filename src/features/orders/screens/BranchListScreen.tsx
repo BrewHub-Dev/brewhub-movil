@@ -5,6 +5,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
   useColorScheme,
 } from 'react-native';
 import { MapPin, Phone, ChevronRight } from 'lucide-react-native';
@@ -78,7 +79,7 @@ export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>
   const isDark = colorScheme === 'dark';
   const { tenant } = useTenant();
 
-  const { data: branches, isLoading, error } = useQuery({
+  const { data: branches, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['branches', tenant?.tenantId],
     queryFn: getBranches,
   });
@@ -155,6 +156,14 @@ export function BranchListScreen({ navigation }: Readonly<BranchListScreenProps>
         renderItem={({ item }) => (
           <BranchCard item={item} isDark={isDark} onPress={() => handleBranchPress(item)} />
         )}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={COFFEE.accent}
+            colors={[COFFEE.accent]}
+          />
+        }
       />
     </View>
   );

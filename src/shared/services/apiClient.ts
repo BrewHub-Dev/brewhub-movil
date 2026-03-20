@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getSession } from '../../features/auth/services/sessionStorage';
 import { getTenantContext } from '../../features/tenant/services/tenantStorage';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.11.115:3001';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
 export const apiClient = axios.create({
   baseURL: API_URL,

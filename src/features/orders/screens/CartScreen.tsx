@@ -26,6 +26,7 @@ import { createOrder } from '../services/orderService';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type { CartScreenProps } from '../../../navigation/types';
 import type { PaymentMethod } from '../../../shared/types/orders.types';
+import { useSession } from '../../auth/hooks/useSession';
 
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
@@ -36,9 +37,8 @@ const stripeModule = isExpoGo
 const createPaymentIntentFn = isExpoGo
   ? null
   : (require('../../stripe/services/stripeService').createPaymentIntent as (
-      amount: number,
-      currency: string,
-      orderId?: string,
+      orderId: string,
+      currency?: string,
     ) => Promise<{ clientSecret: string }>);
 
 const noopStripe = {
@@ -169,6 +169,7 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const cart = useCart();
+  const { user } = useSession();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
 
   const { initPaymentSheet, presentPaymentSheet } = useStripeSafe();
@@ -178,11 +179,12 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
     onSuccess: async (order) => {
       if (paymentMethod === 'card' && createPaymentIntentFn) {
         try {
-          const { clientSecret } = await createPaymentIntentFn(cart.subtotal, 'usd', order._id);
+          const { clientSecret } = await createPaymentIntentFn(order._id, 'mxn');
 
           const { error: initError } = await initPaymentSheet({
             paymentIntentClientSecret: clientSecret,
             merchantDisplayName: (Constants.expoConfig?.extra?.brand?.shopName as string) || 'BrewHub',
+            ...(user?.emailAddress && { customerEmail: user.emailAddress }),
           });
 
           if (initError) {

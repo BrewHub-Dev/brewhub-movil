@@ -3,10 +3,39 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface UserAddress {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+}
+
+export interface UserTenant {
+  tenantId: string;
+  role: "CLIENT" | "SHOP_ADMIN" | "BRANCH_ADMIN";
+  branchId?: string;
+  addedAt?: string;
+}
+
 export interface AuthUser {
   _id: string;
-  emailAddress: string;
   name: string;
+  lastName?: string;
+  username?: string;
+  emailAddress: string;
+  phone?: string;
+  role: "ADMIN" | "SHOP_ADMIN" | "BRANCH_ADMIN" | "CLIENT";
+  address?: UserAddress;
+  pushTokens?: string[];
+  ShopId?: string;
+  BranchId?: string;
+  tenants?: UserTenant[];
+  notifications?: boolean;
+  avatarUrl?: string;
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TenantInfo {

@@ -20,4 +20,26 @@ export interface Branch {
   active: boolean;
   location?: BranchLocation;
   timezone: string;
+  openingHours?: {
+    monday?: string;
+    tuesday?: string;
+    wednesday?: string;
+    thursday?: string;
+    friday?: string;
+    saturday?: string;
+    sunday?: string;
+  };
+  image?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BranchesPagination {
+  data: Branch[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasNext: boolean;
+  };
 }

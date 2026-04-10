@@ -72,15 +72,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   web: {
     favicon: `${assetPath}/favicon.png`,
+    bundler: 'metro',
+    meta: {
+      name: brandConfig.appName,
+      description: 'Order your favorite coffee drinks',
+      themeColor: '#f59e0b',
+      appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: brandConfig.appName,
+      },
+    },
   },
   plugins: [
     'expo-secure-store',
-    [
-      '@stripe/stripe-react-native',
-      {
-        enableGooglePay: true,
-      },
-    ],
   ],
   extra: {
     brand: {

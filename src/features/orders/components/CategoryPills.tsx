@@ -1,5 +1,5 @@
-import React from 'react';
-import { ScrollView, TouchableOpacity, Text } from 'react-native';
+import React, { forwardRef } from 'react';
+import { ScrollView, TouchableOpacity, Text, View } from 'react-native';
 import { COFFEE } from '../constants/coffee';
 
 type CategoryPillsProps = {
@@ -10,61 +10,64 @@ type CategoryPillsProps = {
   onSelectCategory: (category: string) => void;
 };
 
-export function CategoryPills({ categories, selectedCategory, isDark, searchText, onSelectCategory }: Readonly<CategoryPillsProps>) {
-  if (categories.length === 0 || searchText) return null;
+export const CategoryPills = forwardRef<ScrollView, CategoryPillsProps>(
+  ({ categories, selectedCategory, isDark, searchText, onSelectCategory }, ref) => {
+    if (categories.length === 0 || searchText) return null;
 
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={{ flexGrow: 0 }}
-      contentContainerStyle={{
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        paddingBottom: 6,
-        gap: 8,
-      }}
-    >
-      {categories.map((cat) => {
-        const isActive = selectedCategory === cat;
+    return (
+      <ScrollView
+        ref={ref}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 12,
+          paddingBottom: 12,
+        }}
+      >
+        {categories.map((cat, index) => {
+          const isActive = selectedCategory === cat;
 
-        return (
-          <TouchableOpacity
-            key={cat}
-            onPress={() => onSelectCategory(cat)}
-            activeOpacity={0.8}
-            style={{
-              minWidth: 80,
-              paddingHorizontal: 18,
-              paddingVertical: 8,
-              borderRadius: 20,
-              backgroundColor: isActive
-                ? isDark
-                  ? COFFEE.mocha
-                  : COFFEE.caramel
-                : isDark
-                  ? 'rgba(39,39,42,0.5)'
-                  : '#fff',
-              borderWidth: isActive ? 0 : 1,
-              borderColor: isDark ? '#3f3f46' : COFFEE.tan,
-            }}
-          >
-            <Text
+          return (
+            <TouchableOpacity
+              key={cat}
+              onPress={() => onSelectCategory(cat)}
+              activeOpacity={0.8}
               style={{
-                fontSize: 13,
-                fontWeight: isActive ? '700' : '500',
-                color: isActive
-                  ? '#fff'
+                paddingHorizontal: 18,
+                paddingVertical: 10,
+                borderRadius: 20,
+                backgroundColor: isActive
+                  ? isDark
+                    ? COFFEE.mocha
+                    : COFFEE.caramel
                   : isDark
-                    ? '#a1a1aa'
-                    : COFFEE.espresso,
+                    ? '#27272a'
+                    : '#f5f5f4',
+                borderWidth: isActive ? 0 : 1,
+                borderColor: isDark ? '#3f3f46' : COFFEE.tan,
+                marginRight: index === categories.length - 1 ? 20 : 12,
+                minWidth: 70,
+                justifyContent: 'center',
+                alignItems: 'center',
               }}
             >
-              {cat}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
-  );
-}
+              <View>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: isActive ? '600' : '500',
+                    color: isActive ? '#fff' : isDark ? '#a1a1aa' : COFFEE.espresso,
+                    textAlign: 'center',
+                  }}
+                >
+                  {cat}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    );
+  }
+);

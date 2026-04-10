@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   useColorScheme,
+  Platform,
 } from 'react-native';
 import { showAlert } from '@/shared/services/alert';
 import {
@@ -27,19 +28,25 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type { CartScreenProps } from '../../../navigation/types';
 import type { PaymentMethod } from '../../../shared/types/orders.types';
 import { useSession } from '../../auth/hooks/useSession';
+import { TipSelector } from '../components/TipSelector';
 
+const isWeb = Platform.OS === 'web';
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
-const stripeModule = isExpoGo
-  ? null
-  : require('@stripe/stripe-react-native');
+let stripeLoadFailed = false;
+let stripeModule: any = null;
+let createPaymentIntentFn: any = null;
 
-const createPaymentIntentFn = isExpoGo
-  ? null
-  : (require('../../stripe/services/stripeService').createPaymentIntent as (
-      orderId: string,
-      currency?: string,
-    ) => Promise<{ clientSecret: string }>);
+if (!isWeb && !isExpoGo) {
+  try {
+    stripeModule = require('@stripe/stripe-react-native');
+    createPaymentIntentFn = require('../../stripe/services/stripeService').createPaymentIntent;
+  } catch (e) {
+    stripeLoadFailed = true;
+  }
+}
+
+const isStripeDisabled = isWeb || isExpoGo || stripeLoadFailed;
 
 const noopStripe = {
   initPaymentSheet: async (_opts: any) => ({ error: { message: 'Stripe no disponible en Expo Go' } as any }),
@@ -55,11 +62,16 @@ const PAYMENT_METHODS: {
   value: PaymentMethod;
   label: string;
   icon: React.ReactElement;
-}[] = [
-    { value: 'card', label: 'Tarjeta', icon: <CreditCard size={22} /> },
-    { value: 'cash', label: 'Efectivo', icon: <Banknote size={22} /> },
-    { value: 'wallet', label: 'Wallet', icon: <Smartphone size={22} /> },
-  ];
+}[] = isStripeDisabled
+  ? [
+      { value: 'cash', label: 'Efectivo', icon: <Banknote size={22} /> },
+      { value: 'wallet', label: 'Wallet', icon: <Smartphone size={22} /> },
+    ]
+  : [
+      { value: 'card', label: 'Tarjeta', icon: <CreditCard size={22} /> },
+      { value: 'cash', label: 'Efectivo', icon: <Banknote size={22} /> },
+      { value: 'wallet', label: 'Wallet', icon: <Smartphone size={22} /> },
+    ];
 
 type CartHeaderProps = {
   isDark: boolean;
@@ -70,10 +82,13 @@ type CartFooterProps = {
   isDark: boolean;
   paymentMethod: PaymentMethod;
   subtotal: number;
+  tipAmount: number;
   onSelectPaymentMethod: (method: PaymentMethod) => void;
 };
 
-function CartFooter({ isDark, paymentMethod, subtotal, onSelectPaymentMethod }: Readonly<CartFooterProps>) {
+function CartFooter({ isDark, paymentMethod, subtotal, tipAmount, onSelectPaymentMethod }: Readonly<CartFooterProps>) {
+  const total = subtotal + tipAmount;
+
   return (
     <View className="px-4 pb-8 mt-2">
       <View
@@ -134,10 +149,18 @@ function CartFooter({ isDark, paymentMethod, subtotal, onSelectPaymentMethod }: 
             ${subtotal.toFixed(2)}
           </Text>
         </View>
+        {tipAmount > 0 && (
+          <View className="flex-row justify-between mb-3">
+            <Text className={`text-base ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Propina</Text>
+            <Text className={`text-base font-medium ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+              ${tipAmount.toFixed(2)}
+            </Text>
+          </View>
+        )}
         <View className={`flex-row justify-between pt-4 border-t ${isDark ? 'border-zinc-800' : 'border-gray-100'}`}>
           <Text className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Total</Text>
           <Text className={`text-xl font-black ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-            ${subtotal.toFixed(2)}
+            ${total.toFixed(2)}
           </Text>
         </View>
       </View>
@@ -170,7 +193,7 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
   const isDark = colorScheme === 'dark';
   const cart = useCart();
   const { user } = useSession();
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(isStripeDisabled ? 'cash' : 'card');
 
   const { initPaymentSheet, presentPaymentSheet } = useStripeSafe();
 
@@ -238,7 +261,7 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
 
     showAlert(
       'Confirmar orden',
-      `El total es $${cart.subtotal.toFixed(2)}\n¿Deseas confirmar tu orden ahora?`,
+      `El total es $${cart.total.toFixed(2)}\n¿Deseas confirmar tu orden ahora?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -248,6 +271,7 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
               BranchId: branchId,
               items: cart.toOrderItems(),
               paymentMethod,
+              tip: cart.tipAmount,
             });
           },
         },
@@ -272,9 +296,9 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
           {cartItem.selectedModifiers.length > 0 && (
             <View className="flex-row flex-wrap gap-1 mt-1 mb-2">
               {cartItem.selectedModifiers.map((mod) => (
-                <View key={mod.optionName} className={`${isDark ? 'bg-zinc-800' : 'bg-gray-100'} px-2 py-1 rounded-md`}>
-                  <Text className={`text-xs ${isDark ? 'text-zinc-300' : 'text-gray-600'}`}>
-                    {mod.optionName}
+                <View key={mod.optionName} style={{ backgroundColor: isDark ? '#3f3f46' : COFFEE.latte, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                  <Text className="text-xs" style={{ color: isDark ? '#d4d4d8' : COFFEE.mocha }}>
+                    {mod.name}: {mod.optionName}
                   </Text>
                 </View>
               ))}
@@ -381,12 +405,21 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
         keyExtractor={(item) => `${item.item._id}-${item.selectedModifiers.map(m => m.optionName).join('|')}`}
         ListHeaderComponent={<CartHeader isDark={isDark} itemCount={cart.itemCount} />}
         ListFooterComponent={
-          <CartFooter
-            isDark={isDark}
-            paymentMethod={paymentMethod}
-            subtotal={cart.subtotal}
-            onSelectPaymentMethod={setPaymentMethod}
-          />
+          <>
+            <TipSelector
+              isDark={isDark}
+              selectedTip={cart.tip}
+              onSelectTip={cart.setTip}
+              subtotal={cart.subtotal}
+            />
+            <CartFooter
+              isDark={isDark}
+              paymentMethod={paymentMethod}
+              subtotal={cart.subtotal}
+              tipAmount={cart.tipAmount}
+              onSelectPaymentMethod={setPaymentMethod}
+            />
+          </>
         }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -424,7 +457,7 @@ export function CartScreen({ navigation, route }: Readonly<CartScreenProps>) {
               <Text className="text-white font-bold text-lg">Confirmar orden</Text>
               <View className="flex-row items-center bg-white/20 px-3 py-1.5 rounded-xl">
                 <Text className="text-white font-black text-lg">
-                  ${cart.subtotal.toFixed(2)}
+                  ${cart.total.toFixed(2)}
                 </Text>
                 <ChevronRight size={20} color="white" style={{ marginLeft: 4 }} />
               </View>

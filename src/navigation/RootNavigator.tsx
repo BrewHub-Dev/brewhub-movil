@@ -6,12 +6,15 @@ import Constants from 'expo-constants';
 
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
 import { RegisterScreen } from '../features/auth/screens/RegisterScreen';
+import { ProfileScreen } from '../features/auth/screens/ProfileScreen';
+import { SettingsScreen } from '../features/auth/screens/SettingsScreen';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { BranchListScreen } from '../features/orders/screens/BranchListScreen';
 import { MenuScreen } from '../features/orders/screens/MenuScreen';
 import { CartScreen } from '../features/orders/screens/CartScreen';
 import { MyOrdersScreen } from '../features/orders/screens/MyOrdersScreen';
 import { OrderDetailsScreen } from '../features/orders/screens/OrderDetailsScreen';
+import { FavoritesScreen } from '../features/favorites/screens/FavoritesScreen';
 import { useSession } from '../features/auth/hooks/useSession';
 import { useTenant } from '../features/tenant/providers/TenantProvider';
 import { usePushNotifications } from '../hooks/usePushNotifications';
@@ -34,6 +37,7 @@ const linking = {
       Cart: 'cart/:branchId',
       MyOrders: 'my-orders',
       OrderDetails: 'order/:orderId',
+      Favorites: 'favorites',
     },
   },
 };
@@ -55,12 +59,17 @@ const CustomLightTheme = {
   colors: {
     ...DefaultTheme.colors,
     primary: '#f59e0b',
-    background: '#ffffff',
-    card: '#ffffff',
-    text: '#18181b',
-    border: '#e5e7eb',
+    background: '#faf6f1',
+    card: '#faf6f1',
+    text: '#3b2314',
+    border: '#e6d5c3',
   },
 };
+
+const HEADER_BG_LIGHT = '#faf6f1';
+const HEADER_TEXT_LIGHT = '#3b2314';
+const HEADER_BG_DARK = '#18181b';
+const HEADER_TEXT_DARK = '#fafafa';
 
 export function RootNavigator() {
   const { isAuthenticated, isLoading } = useSession();
@@ -96,20 +105,21 @@ export function RootNavigator() {
       <Stack.Navigator
         initialRouteName={getInitialRoute()}
         screenOptions={{
-          headerShown: false,
+          headerShown: true,
           animation: 'fade',
           headerStyle: {
-            backgroundColor: isDark ? '#18181b' : '#ffffff',
+            backgroundColor: isDark ? HEADER_BG_DARK : HEADER_BG_LIGHT,
           },
-          headerTintColor: isDark ? '#fafafa' : '#18181b',
+          headerTintColor: isDark ? HEADER_TEXT_DARK : HEADER_TEXT_LIGHT,
           headerTitleStyle: {
             fontWeight: 'bold',
           },
+          headerShadowVisible: false,
         }}
       >
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
         <Stack.Screen
           name="BranchList"
           component={BranchListScreen}
@@ -134,6 +144,21 @@ export function RootNavigator() {
           name="OrderDetails"
           component={OrderDetailsScreen}
           options={{ headerShown: true, title: 'Detalles de orden' }}
+        />
+        <Stack.Screen
+          name="Favorites"
+          component={FavoritesScreen}
+          options={{ headerShown: true, title: 'Favoritos' }}
+        />
+        <Stack.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{ headerShown: true, title: 'Mi Perfil' }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{ headerShown: true, title: 'Configuración' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

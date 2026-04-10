@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import type { RegisterScreenProps } from '../../../navigation/types';
-import { registerUser } from '../services/authService';
+import { registerUser, registerWithInviteCode } from '../services/authService';
 import { useRegisterForm } from '../context/RegisterContext';
 import { useTenant } from '@/features/tenant/providers/TenantProvider';
 import { showAlert } from '@/shared/services/alert';
@@ -31,6 +31,7 @@ type FormState = {
   name: string;
   emailAddress: string;
   password: string;
+  inviteCode: string;
   isLoading: boolean;
 };
 
@@ -54,12 +55,15 @@ export function RegisterScreen({ navigation }: Readonly<RegisterScreenProps>) {
     name: formData.name,
     emailAddress: formData.emailAddress,
     password: formData.password,
+    inviteCode: formData.inviteCode || '',
     isLoading: false,
   });
-  const { name, emailAddress, password, isLoading } = state;
+  const { name, emailAddress, password, inviteCode, isLoading } = state;
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+
+  const isWeb = Platform.OS === 'web';
 
   const setField = (field: keyof Omit<FormState, 'isLoading'>, value: string) => {
     dispatch({ type: 'SET_FIELD', field, value });
@@ -72,14 +76,28 @@ export function RegisterScreen({ navigation }: Readonly<RegisterScreenProps>) {
       return;
     }
 
+    if (isWeb && !inviteCode.trim()) {
+      showAlert('Error', 'Por favor ingresa el código de invitación');
+      return;
+    }
+
     dispatch({ type: 'SET_LOADING', value: true });
     try {
-      await registerUser({
-        name,
-        emailAddress,
-        password,
-        tenantId,
-      });
+      if (isWeb) {
+        await registerWithInviteCode({
+          name,
+          emailAddress,
+          password,
+          inviteCode: inviteCode.trim(),
+        });
+      } else {
+        await registerUser({
+          name,
+          emailAddress,
+          password,
+          tenantId,
+        });
+      }
 
       clearFormData();
 
@@ -217,6 +235,23 @@ export function RegisterScreen({ navigation }: Readonly<RegisterScreenProps>) {
                   secureTextEntry
                 />
               </View>
+
+              {isWeb && (
+                <View className="mb-6">
+                  <Text className="text-sm font-medium mb-2" style={{ color: labelColor }}>
+                    Código de invitación
+                  </Text>
+                  <TextInput
+                    className="rounded-xl px-4 py-3"
+                    style={{ backgroundColor: inputBg, borderWidth: 1, borderColor: inputBorder, color: inputText }}
+                    placeholder="Ingresa tu código"
+                    placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
+                    value={inviteCode}
+                    onChangeText={(v) => setField('inviteCode', v)}
+                    autoCapitalize="characters"
+                  />
+                </View>
+              )}
 
               <TouchableOpacity
                 className="rounded-xl py-4 items-center mb-4"

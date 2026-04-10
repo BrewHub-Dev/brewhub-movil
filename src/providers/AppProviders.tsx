@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform } from 'react-native';
 
 import { RootNavigator } from '../navigation/RootNavigator';
 import { CartProvider } from '../features/orders/providers/CartProvider';
@@ -11,6 +12,7 @@ import { TenantProvider } from '../features/tenant/providers/TenantProvider';
 import { RegisterProvider } from '../features/auth/context/RegisterContext';
 
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const isWeb = Platform.OS === 'web';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,9 +24,10 @@ const queryClient = new QueryClient({
 });
 
 function StripeWrapper({ children }: Readonly<{ children: React.ReactNode }>) {
-  if (isExpoGo) return <>{children}</>;
+  if (isWeb || isExpoGo) return <>{children}</>;
 
   const { StripeProvider } = require('@stripe/stripe-react-native');
+  
   return (
     <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}>
       {children}

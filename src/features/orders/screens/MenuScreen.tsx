@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useCallback } from 'react';
+import React, { useReducer, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   RefreshControl,
   useWindowDimensions,
   useColorScheme,
+  ScrollView,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getItemsByShopId } from '../services/itemService';
 import { getBranchById } from '../services/branchService';
+import { favoritesService } from '../../favorites/services/favoritesService';
 import { useCart } from '../providers/CartProvider';
 import type { Item } from '../../../shared/types/items.types';
 import type { MenuScreenProps } from '../../../navigation/types';
@@ -74,6 +76,7 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
 
   const { selectedItem, selectedModifiers, quantity, selectedCategory, searchText } = state;
   const cart = useCart();
+  const categoryPillsRef = useRef<ScrollView>(null);
 
   const { data: branch } = useQuery({
     queryKey: ['branch', branchId],
@@ -85,6 +88,14 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
     queryFn: () => getItemsByShopId(branch!.ShopId),
     enabled: !!branch?.ShopId,
   });
+
+  const { data: favoriteItemIds } = useQuery({
+    queryKey: ['favorites', branch?.ShopId],
+    queryFn: () => favoritesService.getFavoritesByShopId(branch!.ShopId),
+    enabled: !!branch?.ShopId,
+  });
+
+  const favoriteSet = new Set(favoriteItemIds || []);
 
   const activeItems = items?.filter((item) => item.active) || [];
 
@@ -100,31 +111,70 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
 
   const categories = Object.keys(groupedByCategory);
 
+  const allItemsByCategory = categories.flatMap(cat => groupedByCategory[cat]);
+
   useEffect(() => {
     if (categories.length > 0 && !selectedCategory) {
       dispatch({ type: 'SET_CATEGORY', category: categories[0] });
     }
-  }, [categories.length]);
+  }, [categories.length, selectedCategory, categories]);
+
+  useEffect(() => {
+    if (selectedCategory && categories.length > 0 && categoryPillsRef.current) {
+      const index = categories.indexOf(selectedCategory);
+      if (index >= 0) {
+        categoryPillsRef.current.scrollTo({ x: index * 100, animated: true });
+      }
+    }
+  }, [selectedCategory, categories]);
+
+  const onScroll = useCallback((event: any) => {
+    if (searchText || categories.length === 0) return;
+    
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const visibleItems = Object.values(groupedByCategory).flatMap((items, catIndex) => 
+      items.map((item, itemIndex) => ({ ...item, catIndex, itemIndex }))
+    );
+    
+    let accumulatedHeight = 0;
+    for (const cat of categories) {
+      const catItems = groupedByCategory[cat];
+      const catHeight = Math.ceil(catItems.length / 2) * (CARD_WIDTH * 1.25 + CARD_GAP);
+      if (offsetY < accumulatedHeight + catHeight) {
+        if (cat !== selectedCategory) {
+          dispatch({ type: 'SET_CATEGORY', category: cat });
+        }
+        break;
+      }
+      accumulatedHeight += catHeight;
+    }
+  }, [searchText, categories, groupedByCategory, selectedCategory]);
 
   const displayedItems = useCallback(() => {
-    let pool = selectedCategory ? groupedByCategory[selectedCategory] ?? [] : activeItems;
     if (searchText.trim()) {
       const q = searchText.toLowerCase();
-      pool = activeItems.filter(
+      return activeItems.filter(
         (i) =>
           i.name.toLowerCase().includes(q) ||
           i.description?.toLowerCase().includes(q),
       );
     }
-    return pool;
-  }, [selectedCategory, searchText, activeItems, groupedByCategory])();
+    return allItemsByCategory;
+  }, [searchText, activeItems, allItemsByCategory]);
+
+  const itemsList = searchText.trim() ? displayedItems() : allItemsByCategory;
 
   const handleItemPress = useCallback((item: Item) => {
     if (!item.active) return;
     dispatch({ type: 'SELECT_ITEM', item });
   }, []);
 
-  const handleAddToCart = () => {
+  const handleAddPress = useCallback((item: Item) => {
+    if (!item.active) return;
+    dispatch({ type: 'SELECT_ITEM', item });
+  }, []);
+
+  const handleAddToCart = useCallback(() => {
     if (!selectedItem) return;
     const modifiers = Object.entries(selectedModifiers).map(([name, optionName]) => ({
       name,
@@ -132,9 +182,9 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
     }));
     cart.addToCart(selectedItem, quantity, modifiers);
     dispatch({ type: 'CLEAR_SELECTION' });
-  };
+  }, [selectedItem, selectedModifiers, quantity, cart]);
 
-  const getModalTotal = () => {
+  const getModalTotal = useCallback(() => {
     if (!selectedItem) return 0;
     const extras = Object.entries(selectedModifiers).reduce((sum, [modName, optName]) => {
       const modifier = selectedItem.modifiers?.find((m) => m.name === modName);
@@ -142,11 +192,19 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
       return sum + (option?.extraPrice ?? 0);
     }, 0);
     return (selectedItem.price + extras) * quantity;
-  };
+  }, [selectedItem, selectedModifiers, quantity]);
 
   const renderItem = useCallback(({ item }: { item: Item }) => (
-    <ProductCard item={item} isDark={isDark} cardWidth={CARD_WIDTH} onPress={handleItemPress} />
-  ), [isDark, CARD_WIDTH, handleItemPress]);
+    <ProductCard 
+      item={item} 
+      isDark={isDark} 
+      cardWidth={CARD_WIDTH} 
+      onPress={handleItemPress}
+      onAddPress={handleAddPress}
+      isFavorite={favoriteSet.has(item._id)}
+      shopId={branch?.ShopId}
+    />
+  ), [isDark, CARD_WIDTH, handleItemPress, handleAddPress, favoriteSet, branch?.ShopId]);
 
   if (isLoading) {
     return (
@@ -190,6 +248,7 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
       />
 
       <CategoryPills
+        ref={categoryPillsRef}
         categories={categories}
         selectedCategory={selectedCategory}
         isDark={isDark}
@@ -198,13 +257,15 @@ export function MenuScreen({ navigation, route }: Readonly<MenuScreenProps>) {
       />
 
       <FlatList
-        data={displayedItems}
+        data={itemsList}
         keyExtractor={(item) => item._id}
         numColumns={2}
         columnWrapperStyle={{ gap: CARD_GAP, paddingHorizontal: CARD_PADDING }}
         contentContainerStyle={{ paddingTop: 10, paddingBottom: 130 }}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

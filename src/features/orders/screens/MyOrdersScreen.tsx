@@ -13,9 +13,11 @@ import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../../auth/hooks/useSession';
 import { useSocket } from '../../../hooks/useSocket';
+import { useTimezone } from '../../../hooks/useTimezone';
 import { getMyOrders } from '../services/orderService';
 import type { MyOrdersScreenProps } from '../../../navigation/types';
 import type { Order } from '../../../shared/types/orders.types';
+import { COFFEE } from '../constants/coffee';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pendiente', color: 'text-orange-500' },
@@ -29,19 +31,28 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 const LIMIT = 10;
 
 function OrderCard({ order, onPress, isDark }: Readonly<{ order: Order; onPress: () => void; isDark: boolean }>) {
+  const { format, formatTime, formatDate, timezone } = useTimezone();
   const status = STATUS_LABELS[order.status] ?? STATUS_LABELS.pending;
-  const date = new Date(order.createdAt).toLocaleDateString('es-MX', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
+  
+  const createdAt = order.createdAt ? new Date(order.createdAt) : null;
+  const formattedDate = createdAt ? formatDate(createdAt) : '-';
+  const formattedTime = createdAt ? formatTime(createdAt) : '-';
+
+  const cardBg = isDark ? '#18181b' : '#fff';
+  const cardBorder = isDark ? '#3f3f46' : COFFEE.tan;
+  const titleColor = isDark ? '#fafafa' : COFFEE.darkRoast;
+  const subtextColor = isDark ? '#a1a1aa' : COFFEE.mocha;
+  const accentColor = isDark ? '#f59e0b' : COFFEE.accent;
 
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      className={`rounded-2xl p-4 border mb-3 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'}`}
+      className={`rounded-2xl p-4 border mb-3`}
+      style={{ backgroundColor: cardBg, borderColor: cardBorder }}
     >
       <View className="flex-row items-center justify-between mb-2">
-        <Text className={`font-bold text-m ${isDark ? 'text-white' : 'text-gray-900'}`}>
+        <Text className={`font-bold text-m`} style={{ color: titleColor }}>
           {order.orderNumber}
         </Text>
         <Text className={`text-sm font-semibold ${status.color}`}>
@@ -50,16 +61,16 @@ function OrderCard({ order, onPress, isDark }: Readonly<{ order: Order; onPress:
       </View>
 
       <View className="flex-row items-center justify-between">
-        <Text className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+        <Text className={`text-sm`} style={{ color: subtextColor }}>
           {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
         </Text>
-        <Text className={`font-bold ${isDark ? 'text-amber-500' : 'text-amber-600'}`}>
+        <Text className={`font-bold`} style={{ color: accentColor }}>
           ${order.total.toFixed(2)}
         </Text>
       </View>
 
-      <Text className={`text-sm mt-1 ${isDark ? 'text-zinc-600' : 'text-gray-400'}`}>
-        {date}
+      <Text className={`text-sm mt-1`} style={{ color: subtextColor }}>
+        {formattedDate} - {formattedTime}
       </Text>
     </TouchableOpacity>
   );
@@ -138,9 +149,11 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
   }
 
   const renderItem = ({ item }: { item: ListItem }) => {
+    const subtextColor = isDark ? '#a1a1aa' : COFFEE.mocha;
+    
     if (item.type === 'header') {
       return (
-        <Text className={`text-xs font-semibold uppercase tracking-widest mb-3 mt-2 ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+        <Text className="text-xs font-semibold uppercase tracking-widest mb-3 mt-2" style={{ color: subtextColor }}>
           {item.title}
         </Text>
       );
@@ -157,6 +170,10 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
     }
 
     if (item.type === 'loadMore') {
+      const btnBg = isDark ? '#18181b' : '#fff';
+      const btnBorder = isDark ? '#3f3f46' : COFFEE.tan;
+      const btnText = isDark ? '#a1a1aa' : COFFEE.mocha;
+      
       return (
         <TouchableOpacity
           onPress={loadMoreHistory}
@@ -170,15 +187,15 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
             paddingHorizontal: 20,
             borderRadius: 12,
             borderWidth: 1,
-            borderColor: isDark ? '#3f3f46' : '#e5e7eb',
-            backgroundColor: isDark ? '#18181b' : '#f9fafb',
+            borderColor: btnBorder,
+            backgroundColor: btnBg,
             marginBottom: 12,
           }}
         >
           {loadingMore ? (
-            <ActivityIndicator size="small" color="#f59e0b" />
+            <ActivityIndicator size="small" color={COFFEE.accent} />
           ) : (
-            <Text style={{ color: isDark ? '#a1a1aa' : '#6b7280', fontWeight: '600', fontSize: 14 }}>
+            <Text style={{ color: btnText, fontWeight: '600', fontSize: 14 }}>
               Cargar más historial
             </Text>
           )}
@@ -186,13 +203,17 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
       );
     }
 
+    const emptyTitle = isDark ? '#fafafa' : COFFEE.darkRoast;
+    const emptySubtext = isDark ? '#71717a' : COFFEE.mocha;
+    const iconColor = isDark ? '#52525b' : COFFEE.caramel;
+
     return (
       <View className="flex-1 justify-center items-center py-20">
-        <ShoppingBag color={isDark ? '#52525b' : '#9ca3af'} size={48} style={{ marginBottom: 16 }} />
-        <Text className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+        <ShoppingBag color={iconColor} size={48} style={{ marginBottom: 16 }} />
+        <Text className="text-lg font-bold mb-2" style={{ color: emptyTitle }}>
           Sin órdenes aún
         </Text>
-        <Text className={`text-sm text-center ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
+        <Text className="text-sm text-center" style={{ color: emptySubtext }}>
           Realiza tu primera orden desde la pantalla principal
         </Text>
       </View>
@@ -200,10 +221,11 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
   };
 
   if (isLoading) {
+    const loadingText = isDark ? '#a1a1aa' : COFFEE.mocha;
     return (
-      <View className={`flex-1 justify-center items-center ${isDark ? 'bg-zinc-950' : 'bg-gray-50'}`}>
-        <ActivityIndicator size="large" color="#f59e0b" />
-        <Text className={`mt-4 text-sm ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}>
+        <ActivityIndicator size="large" color={COFFEE.accent} />
+        <Text className="mt-4 text-sm" style={{ color: loadingText }}>
           Cargando órdenes...
         </Text>
       </View>
@@ -212,9 +234,9 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
 
   if (error) {
     return (
-      <View className={`flex-1 justify-center items-center px-6 ${isDark ? 'bg-zinc-950' : 'bg-gray-50'}`}>
+      <View className="flex-1 justify-center items-center px-6" style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}>
         <Text className="text-red-500 text-center mb-4">No se pudieron cargar tus órdenes</Text>
-        <TouchableOpacity onPress={() => refetch()} className="bg-amber-500 px-6 py-3 rounded-xl">
+        <TouchableOpacity onPress={() => refetch()} style={{ backgroundColor: COFFEE.accent, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12 }}>
           <Text className="text-white font-bold">Reintentar</Text>
         </TouchableOpacity>
       </View>
@@ -222,7 +244,7 @@ export function MyOrdersScreen({ navigation }: Readonly<MyOrdersScreenProps>) {
   }
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? 'bg-zinc-950' : 'bg-gray-50'}`} edges={['bottom']}>
+    <SafeAreaView className="flex-1" edges={['bottom']} style={{ backgroundColor: isDark ? '#09090b' : COFFEE.cream }}>
       <FlatList
         data={listItems}
         keyExtractor={(item, index) => {

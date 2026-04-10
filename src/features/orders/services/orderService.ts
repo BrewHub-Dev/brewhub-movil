@@ -56,3 +56,13 @@ export async function cancelOrder(orderId: string, notes?: string): Promise<Orde
     throw new Error(message);
   }
 }
+
+export async function reorder(orderId: string): Promise<{ items: any[]; BranchId: string }> {
+  try {
+    const response = await apiClient.post(`/orders/${orderId}/reorder`);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error reordering:', error);
+    throw new Error(error.response?.data?.error || 'No se pudo reordenar');
+  }
+}

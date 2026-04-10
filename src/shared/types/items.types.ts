@@ -14,6 +14,9 @@ export interface Category {
   name: string;
   description?: string;
   ShopId: string;
+  image?: string;
+  active?: boolean;
+  sortOrder?: number;
 }
 
 export interface Item {
@@ -23,6 +26,7 @@ export interface Item {
   sku?: string;
   barcode?: string;
   ShopId: string;
+  BranchId?: string;
   price: number;
   cost?: number;
   active: boolean;
@@ -32,4 +36,16 @@ export interface Item {
   images?: string[];
   modifiers?: ItemModifier[];
   rating?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ItemsPagination {
+  data: Item[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasNext: boolean;
+  };
 }

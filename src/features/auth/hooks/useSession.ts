@@ -5,6 +5,8 @@ import type { AuthUser } from '../types/auth.types';
 const SESSION_QUERY_KEY = ['session'] as const;
 
 export function useSession() {
+  const queryClient = useQueryClient();
+
   const { data, isLoading } = useQuery<StoredSession | null>({
     queryKey: SESSION_QUERY_KEY,
     queryFn: getSession,
@@ -13,12 +15,15 @@ export function useSession() {
     retry: false,
   });
 
+  const refetch = () => queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });
+
   return {
     session: data ?? null,
     user: data?.user ?? null,
     token: data?.token ?? null,
     isLoading,
     isAuthenticated: !!data,
+    refetch,
   };
 }
 

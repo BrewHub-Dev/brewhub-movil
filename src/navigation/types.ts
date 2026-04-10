@@ -9,6 +9,9 @@ export type RootStackParamList = {
   Cart: { branchId: string };
   MyOrders: undefined;
   OrderDetails: { orderId: string };
+  Favorites: undefined;
+  Profile: undefined;
+  Settings: undefined;
 };
 
 export type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
@@ -19,3 +22,6 @@ export type MenuScreenProps = NativeStackScreenProps<RootStackParamList, 'Menu'>
 export type CartScreenProps = NativeStackScreenProps<RootStackParamList, 'Cart'>;
 export type MyOrdersScreenProps = NativeStackScreenProps<RootStackParamList, 'MyOrders'>;
 export type OrderDetailsScreenProps = NativeStackScreenProps<RootStackParamList, 'OrderDetails'>;
+export type FavoritesScreenProps = NativeStackScreenProps<RootStackParamList, 'Favorites'>;
+export type ProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Profile'>;
+export type SettingsScreenProps = NativeStackScreenProps<RootStackParamList, 'Settings'>;

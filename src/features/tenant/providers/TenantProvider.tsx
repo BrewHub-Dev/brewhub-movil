@@ -27,7 +27,13 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     loadTenant();
   }, []);
 
-  const fetchBranding = async (tenantId: string): Promise<{ name: string; image: string | null } | null> => {
+  const fetchBranding = async (tenantId: string): Promise<{ 
+    name: string; 
+    image: string | null;
+    timezone?: string;
+    currency?: { code: string; symbol: string };
+    language?: string;
+  } | null> => {
     try {
       const { data } = await axios.get(`${API_URL}/shops/${tenantId}/branding`);
       return data;
@@ -44,10 +50,17 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
       if (savedTenant) {
         setTenantState(savedTenant);
 
-        if (!savedTenant.shopLogo) {
+        if (!savedTenant.shopLogo || !savedTenant.timezone) {
           const branding = await fetchBranding(savedTenant.tenantId);
-          if (branding?.image) {
-            const updated = { ...savedTenant, shopName: branding.name, shopLogo: branding.image };
+          if (branding) {
+            const updated = { 
+              ...savedTenant, 
+              shopName: branding.name, 
+              shopLogo: branding.image,
+              timezone: branding.timezone,
+              currency: branding.currency,
+              language: branding.language,
+            };
             await saveTenantContext(updated);
             setTenantState(updated);
           }
@@ -63,6 +76,9 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
             tenantId: brandTenantId,
             shopName: branding?.name ?? brandShopName ?? brandAppName ?? 'BrewHub',
             shopLogo: branding?.image ?? undefined,
+            timezone: branding?.timezone ?? 'UTC',
+            currency: branding?.currency,
+            language: branding?.language ?? 'es',
           };
           await saveTenantContext(autoTenant);
           setTenantState(autoTenant);

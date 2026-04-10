@@ -14,6 +14,7 @@ export interface CartItem {
 
 export function useCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [tip, setTip] = useState<number>(0);
 
   const addToCart = (
     item: Item,
@@ -57,6 +58,7 @@ export function useCart() {
 
   const clearCart = () => {
     setCartItems([]);
+    setTip(0);
   };
 
   const calculateItemTotal = (cartItem: CartItem): number => {
@@ -77,6 +79,14 @@ export function useCart() {
     return cartItems.reduce((sum, cartItem) => sum + calculateItemTotal(cartItem), 0);
   }, [cartItems]);
 
+  const tipAmount = useMemo(() => {
+    return (subtotal * tip) / 100;
+  }, [subtotal, tip]);
+
+  const total = useMemo(() => {
+    return subtotal + tipAmount;
+  }, [subtotal, tipAmount]);
+
   const itemCount = useMemo(() => {
     return cartItems.reduce((sum, cartItem) => sum + cartItem.quantity, 0);
   }, [cartItems]);
@@ -90,6 +100,15 @@ export function useCart() {
     }));
   };
 
+  const clearTip = () => {
+    setTip(0);
+  };
+
+  const setCartFromReorder = (items: { item: Item; quantity: number; selectedModifiers: { name: string; optionName: string }[]; notes?: string }[]) => {
+    setCartItems(items);
+    setTip(0);
+  };
+
   return {
     cartItems,
     addToCart,
@@ -98,7 +117,13 @@ export function useCart() {
     clearCart,
     calculateItemTotal,
     subtotal,
+    tip,
+    setTip,
+    tipAmount,
+    total,
     itemCount,
     toOrderItems,
+    clearTip,
+    setCartFromReorder,
   };
 }

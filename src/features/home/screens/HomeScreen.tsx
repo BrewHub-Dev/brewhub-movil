@@ -7,10 +7,11 @@ import {
   useColorScheme,
   ScrollView,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { COFFEE } from '../../orders/constants/coffee';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, ShoppingCart, ClipboardList, Bell, Coffee, MapPin, Phone, ChevronRight } from 'lucide-react-native';
+import { User, ShoppingCart, ClipboardList, Coffee, MapPin, Phone, ChevronRight, Heart, Settings, LogOut } from 'lucide-react-native';
 import { useSession } from '@/features/auth/hooks/useSession';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { getCountDashboard } from '../services/homeService';
@@ -26,6 +27,7 @@ import {
   BottomSheetBackdrop,
 } from '@gorhom/bottom-sheet';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
+import { useSocket } from '@/hooks/useSocket';
 
 export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
   const { user } = useSession();
@@ -33,6 +35,8 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { tenant } = useTenant();
+  
+  const [refreshing, setRefreshing] = useState(false);
 
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ['50%', '80%'], []);
@@ -49,19 +53,42 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
     completed: number;
   }>({ total: 0, inProduction: 0, completed: 0 });
 
-  useEffect(() => {
-    async function fetchDashboardCounts() {
-      if (user?._id) {
-        const counts = await getCountDashboard(user._id);
-        setDashboardCounts({
-          total: counts.total ?? 0,
-          inProduction: counts.inProduction ?? 0,
-          completed: counts.completed ?? 0,
-        });
-      }
+  const fetchDashboardCounts = useCallback(async () => {
+    if (user?._id) {
+      const counts = await getCountDashboard(user._id);
+      setDashboardCounts({
+        total: counts.total ?? 0,
+        inProduction: counts.inProduction ?? 0,
+        completed: counts.completed ?? 0,
+      });
     }
-    fetchDashboardCounts();
   }, [user?._id]);
+
+  useEffect(() => {
+    fetchDashboardCounts();
+  }, [fetchDashboardCounts]);
+
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket || !user?._id) return;
+
+    const handleCountsUpdated = () => {
+      fetchDashboardCounts();
+    };
+
+    socket.on('dashboard:countsUpdated', handleCountsUpdated);
+
+    return () => {
+      socket.off('dashboard:countsUpdated', handleCountsUpdated);
+    };
+  }, [socket, user?._id, fetchDashboardCounts]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchDashboardCounts();
+    setRefreshing(false);
+  }, [fetchDashboardCounts]);
 
   async function handleLogout() {
     await logout();
@@ -101,10 +128,25 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
         backgroundColor={isDark ? '#09090b' : COFFEE.cream}
       />
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COFFEE.accent}
+            colors={[COFFEE.accent]}
+          />
+        }
+      >
         <View className="px-6 pt-4 pb-2">
           <View className="flex-row items-center justify-between mb-6">
-            <View className="flex-row items-center">
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Profile')}
+              className="flex-row items-center flex-1"
+              activeOpacity={0.7}
+            >
               <View className="w-12 h-12 rounded-2xl items-center justify-center mr-3"
                 style={{ backgroundColor: COFFEE.accent }}>
                 <User color="#fff" size={22} />
@@ -117,13 +159,14 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
                   {user?.name}
                 </Text>
               </View>
-            </View>
-            <View
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Settings')}
               className="w-10 h-10 rounded-full items-center justify-center"
               style={{ backgroundColor: cardBg }}
             >
-              <Bell size={20} color={subtextColor} />
-            </View>
+              <Settings size={20} color={subtextColor} />
+            </TouchableOpacity>
           </View>
 
           <Text
@@ -240,13 +283,46 @@ export function HomeScreen({ navigation }: Readonly<HomeScreenProps>) {
               <Text style={{ fontSize: 24, color: isDark ? '#3f3f46' : COFFEE.tan }}>›</Text>
             </View>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Favorites')}
+            activeOpacity={0.85}
+            className="rounded-3xl"
+            style={{
+              backgroundColor: cardBg,
+              borderWidth: isDark ? 1 : 0,
+              borderColor: isDark ? '#27272a' : 'transparent',
+              marginTop: 12,
+            }}
+          >
+            <View className="p-5 flex-row items-center">
+              <View
+                className="w-14 h-14 rounded-2xl items-center justify-center mr-4"
+                style={{ backgroundColor: isDark ? '#27272a' : '#f3f4f6' }}
+              >
+                <Heart size={24} color={subtextColor} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-bold" style={{ color: titleColor }}>
+                  Mis favoritos
+                </Text>
+                <Text className="text-sm mt-0.5" style={{ color: subtextColor }}>
+                  Productos guardados
+                </Text>
+              </View>
+              <Text style={{ fontSize: 24, color: isDark ? '#3f3f46' : COFFEE.tan }}>›</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
       <TouchableOpacity onPress={handleLogout} className="items-center pb-10">
-        <Text className="text-sm" style={{ color: isDark ? '#52525b' : COFFEE.caramel }}>
-          Cerrar Sesión
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <LogOut size={16} color={isDark ? '#52525b' : COFFEE.caramel} />
+          <Text className="text-sm ml-2" style={{ color: isDark ? '#52525b' : COFFEE.caramel }}>
+            Cerrar Sesión
+          </Text>
+        </View>
       </TouchableOpacity>
 
       <BottomSheetModal

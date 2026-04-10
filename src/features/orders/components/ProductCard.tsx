@@ -1,19 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
-import { Plus, Star } from 'lucide-react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import { Plus, Star, Heart } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { Item } from '../../../shared/types/items.types';
 import { COFFEE } from '../constants/coffee';
+import { favoritesService } from '../../favorites/services/favoritesService';
 
 type ProductCardProps = {
   item: Item;
   isDark: boolean;
   cardWidth: number;
   onPress: (item: Item) => void;
+  onAddPress?: (item: Item) => void;
+  isFavorite?: boolean;
+  shopId?: string;
 };
 
-export function ProductCard({ item, cardWidth, onPress }: Readonly<ProductCardProps>) {
+export function ProductCard({ item, cardWidth, onPress, onAddPress, isFavorite: initialFavorite = false, shopId }: Readonly<ProductCardProps>) {
+  const [isFavorite, setIsFavorite] = useState(initialFavorite);
+  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setIsFavorite(initialFavorite);
+  }, [initialFavorite]);
+
+  const handleFavoriteToggle = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      if (isFavorite) {
+        await favoritesService.removeFavorite(item._id);
+      } else {
+        await favoritesService.addFavorite(item._id);
+      }
+      setIsFavorite(!isFavorite);
+      if (shopId) {
+        queryClient.invalidateQueries({ queryKey: ['favorites', shopId] });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <TouchableOpacity
       onPress={() => onPress(item)}
@@ -65,6 +97,28 @@ export function ProductCard({ item, cardWidth, onPress }: Readonly<ProductCardPr
             {item.rating ?? '4.9'}
           </Text>
         </View>
+
+        <TouchableOpacity
+          onPress={handleFavoriteToggle}
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          disabled={isLoading}
+        >
+          <Heart
+            size={18}
+            color={isFavorite ? '#ef4444' : '#fff'}
+            fill={isFavorite ? '#ef4444' : 'transparent'}
+          />
+        </TouchableOpacity>
 
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.75)']}
@@ -137,6 +191,14 @@ export function ProductCard({ item, cardWidth, onPress }: Readonly<ProductCardPr
             </Text>
 
             <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                if (onAddPress) {
+                  onAddPress(item);
+                } else {
+                  onPress(item);
+                }
+              }}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',

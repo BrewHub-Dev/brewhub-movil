@@ -12,4 +12,10 @@ config.resolver.alias = {
   'react-native-reanimated': require.resolve('react-native-reanimated'),
 };
 
+config.resolver.blockList = [
+  /node_modules\/@stripe\/stripe-react-native\/lib\/module\/specs\/.*/,
+  /node_modules\/@stripe\/stripe-react-native\/lib\/module\/OnrampSdk\/.*/,
+  /node_modules\/@stripe\/stripe-react-native\/lib\/module\/commonjs\/.*/,
+];
+
 module.exports = withNativeWind(config, { input: './src/global.css', configPath: './tailwind.config.js', });

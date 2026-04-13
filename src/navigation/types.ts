@@ -24,4 +24,3 @@ export type MyOrdersScreenProps = NativeStackScreenProps<RootStackParamList, 'My
 export type OrderDetailsScreenProps = NativeStackScreenProps<RootStackParamList, 'OrderDetails'>;
 export type FavoritesScreenProps = NativeStackScreenProps<RootStackParamList, 'Favorites'>;
 export type ProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Profile'>;
-export type SettingsScreenProps = NativeStackScreenProps<RootStackParamList, 'Settings'>;

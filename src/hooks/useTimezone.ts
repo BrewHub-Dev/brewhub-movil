@@ -100,8 +100,3 @@ export function useTimezone(customTimezone?: string) {
     ...dateTime,
   };
 }
-
-export function formatCurrency(amount: number, currency?: { code: string; symbol: string }): string {
-  const symbol = currency?.symbol ?? '$';
-  return `${symbol}${amount.toFixed(2)}`;
-}
